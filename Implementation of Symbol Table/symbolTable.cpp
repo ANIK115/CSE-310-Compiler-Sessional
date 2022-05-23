@@ -41,6 +41,10 @@ public:
     {
         next = new SymbolInfo(symName, symType);
     }
+    void setNext(SymbolInfo* s)
+    {
+        next = s;
+    }
     void setName(string name)
     {
         this->name = name;
@@ -136,6 +140,64 @@ public:
         cout <<"oppse!\n";
     }
 
+    bool deleteAnEntry(string symbol)
+    {
+        int location = hashing(symbol);
+        cout << "Hash function in delete returned " << location << endl;
+        SymbolInfo *cur = this->syfo;
+        for(int i=0; i<location; i++)
+        {
+            cur++;
+        }
+        //if the location is empty, then the symbol is not present in the symbol table
+        if(cur->getName()=="")
+        {
+            cout << "Empty string!" << endl;
+            return false;
+        }
+
+        else
+        {
+            bool flag = false;
+            SymbolInfo *prev=cur;
+            while(cur!= NULL)
+            {
+                cout << "Entered while loop in delete\n";
+                if(cur->getName()==symbol)
+                {
+                    flag = true;
+                    cout << "flag is true in while loop\n";
+                    break;
+                }
+                prev = cur;
+                cur = cur->getNext();
+            }
+            if(flag)
+            {
+                if(cur->getNext() != NULL)
+                {
+                    //if the symbol is in the first pointer of collision linked list, then deleting the pointer causes
+                    //to break down the array of pointers chain. therefore, the next pointer's data is kept here and the next
+                    //pointer is deleted!
+                    cur->setName(cur->getNext()->getName());
+                    cur->setType(cur->getNext()->getType());
+                    cur->setNext(cur->getNext()->getNext());
+                    delete cur->getNext();
+
+                }else
+                {
+                    cout << "Current's next pointer is null...so deleting current will do" << endl;
+                    prev ->setNext(NULL);
+                    //if previous's next pointer is not set to null, then deleting the current pointer causes run time error
+                    delete cur;
+                }
+
+                cout << "Setting next pointer\n";
+            }
+            return flag;
+        }
+    }
+
     void print()
     {
         SymbolInfo *ptr = this->syfo;
@@ -175,6 +237,10 @@ int main()
     s.insertIntoSymbolTable("5", "NUMBER");
     s.insertIntoSymbolTable("i", "VAR");
 
+    s.print();
+
+    s.deleteAnEntry("5");
+    cout <<"\n\nAfter deleting\n\n";
     s.print();
     return 0;
 }
