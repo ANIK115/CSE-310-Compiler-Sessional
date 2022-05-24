@@ -1,340 +1,130 @@
-I a a
 
-Inserted in ScopeTable# 1 at position 6, 0
+Inserted in ScopeTable# 1 at position 4, 0
 
-S
 
-New ScopeTable with id 1.1 created
+Inserted in ScopeTable# 1 at position 0, 0
 
-I h h
 
-Inserted in ScopeTable# 1.1 at position 6, 0
+Found in ScopeTable# 1 at position 4, 0
 
-S
 
-New ScopeTable with id 1.1.1 created
+Not Found
 
-I o o
 
-Inserted in ScopeTable# 1.1.1 at position 6, 0
+Inserted in ScopeTable# 1 at position 4, 1
 
-P A
 
+ScopeTable# 1
 
-ScopeTable # 1.1.1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < o : o>  
+0 --> < i : VAR >
+1 --> 
+2 --> 
+3 --> 
+4 --> < foo : FUNCTION >< 5 : NUMBER >
+5 --> 
+6 --> 
 
+Not Found
+j is not found
 
-ScopeTable # 1.1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < h : h>  
 
+Found in ScopeTable# 1 at position 0, 0
+Found it
+Deleted entry at 0,0 in the current scopetable
 
-ScopeTable # 1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < a : a>  
 
-L o
+ScopeTable# 1
 
-Found in ScopeTable# 1.1.1 at position 6, 0
+0 --> 
+1 --> 
+2 --> 
+3 --> 
+4 --> < foo : FUNCTION >< 5 : NUMBER >
+5 --> 
+6 --> 
 
-L a
+New ScopeTable with id# 2 is created
 
-Found in ScopeTable# 1 at position 6, 0
 
-E
+Inserted in ScopeTable# 2 at position 6, 0
 
-ScopeTable with id 1.1.1 removed
 
-S
+Inserted in ScopeTable# 2 at position 1, 0
 
-New ScopeTable with id 1.1.2 created
 
-I foo FUNCTION
+ScopeTable# 2
 
-Inserted in ScopeTable# 1.1.2 at position 2, 0
+0 --> 
+1 --> < == : RELOP >
+2 --> 
+3 --> 
+4 --> 
+5 --> 
+6 --> < <= : RELOP >
+ScopeTable# 1
 
-E
+0 --> 
+1 --> 
+2 --> 
+3 --> 
+4 --> < foo : FUNCTION >< 5 : NUMBER >
+5 --> 
+6 --> 
 
-ScopeTable with id 1.1.2 removed
+This word already exists
+< <=, RELOP > already exist in the currentScopeTable
 
-S
 
-New ScopeTable with id 1.1.3 created
+Inserted in ScopeTable# 2 at position 4, 0
 
-I i VAR
 
-Inserted in ScopeTable# 1.1.3 at position 0, 0
+Found in ScopeTable# 2 at position 1, 0
+Found it
+Deleted entry at 1,0 in the current scopetable
 
-P A
 
+ScopeTable# 2
 
-ScopeTable # 1.1.3
-0 -->  < i : VAR>  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  
+0 --> 
+1 --> 
+2 --> 
+3 --> 
+4 --> < foo : FUNCTION >
+5 --> 
+6 --> < <= : RELOP >
+ScopeTable# 1
 
+0 --> 
+1 --> 
+2 --> 
+3 --> 
+4 --> < foo : FUNCTION >< 5 : NUMBER >
+5 --> 
+6 --> 
+ScopeTable with id 2 is removed
+Destroying the ScopeTable
 
-ScopeTable # 1.1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < h : h>  
 
+Inserted in ScopeTable# 1 at position 4, 2
 
-ScopeTable # 1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < a : a>  
 
-L foo
+Inserted in ScopeTable# 1 at position 2, 0
 
-Not found
 
-L j
+ScopeTable# 1
 
-Not found
+0 --> 
+1 --> 
+2 --> < k : k >
+3 --> 
+4 --> < foo : FUNCTION >< 5 : NUMBER >< t : t >
+5 --> 
+6 --> 
+ScopeTable with id 1 is removed
+Destroying the First Scope
+Destroying the ScopeTable
 
-E
+NO CURRENT SCOPE
 
-ScopeTable with id 1.1.3 removed
-
-E
-
-ScopeTable with id 1.1 removed
-
-S
-
-New ScopeTable with id 1.2 created
-
-I 5 NUMBER
-
-Inserted in ScopeTable# 1.2 at position 4, 0
-
-P A
-
-
-ScopeTable # 1.2
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  < 5 : NUMBER>  
-5 -->  
-6 -->  
-
-
-ScopeTable # 1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < a : a>  
-
-D j
-
-Not found
-
-j not found
-
-D i
-
-Not found
-
-i not found
-
-P A
-
-
-ScopeTable # 1.2
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  < 5 : NUMBER>  
-5 -->  
-6 -->  
-
-
-ScopeTable # 1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < a : a>  
-
-S
-
-New ScopeTable with id 1.2.1 created
-
-E
-
-ScopeTable with id 1.2.1 removed
-
-S
-
-New ScopeTable with id 1.2.2 created
-
-I <= RELOP
-
-Inserted in ScopeTable# 1.2.2 at position 2, 0
-
-I == RELOP
-
-Inserted in ScopeTable# 1.2.2 at position 3, 0
-
-P A
-
-
-ScopeTable # 1.2.2
-0 -->  
-1 -->  
-2 -->  < <= : RELOP>  
-3 -->  < == : RELOP>  
-4 -->  
-5 -->  
-6 -->  
-
-
-ScopeTable # 1.2
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  < 5 : NUMBER>  
-5 -->  
-6 -->  
-
-
-ScopeTable # 1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < a : a>  
-
-I <= RELOP
-
-<<=,RELOP> already exists in current ScopeTable
-
-I foo FUNCTION
-
-Inserted in ScopeTable# 1.2.2 at position 2, 1
-
-D ==
-
-Found in ScopeTable# 1.2.2 at position 3, 0
-
-Deleted Entry 3, 0 from current ScopeTable
-
-P A
-
-
-ScopeTable # 1.2.2
-0 -->  
-1 -->  
-2 -->  < <= : RELOP>  < foo : FUNCTION>  
-3 -->  
-4 -->  
-5 -->  
-6 -->  
-
-
-ScopeTable # 1.2
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  < 5 : NUMBER>  
-5 -->  
-6 -->  
-
-
-ScopeTable # 1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < a : a>  
-
-E
-
-ScopeTable with id 1.2.2 removed
-
-I t t
-
-Inserted in ScopeTable# 1.2 at position 4, 1
-
-I k k
-
-Inserted in ScopeTable# 1.2 at position 2, 0
-
-P C
-
-
-ScopeTable # 1.2
-0 -->  
-1 -->  
-2 -->  < k : k>  
-3 -->  
-4 -->  < 5 : NUMBER>  < t : t>  
-5 -->  
-6 -->  
-
-P A
-
-
-ScopeTable # 1.2
-0 -->  
-1 -->  
-2 -->  < k : k>  
-3 -->  
-4 -->  < 5 : NUMBER>  < t : t>  
-5 -->  
-6 -->  
-
-
-ScopeTable # 1
-0 -->  
-1 -->  
-2 -->  
-3 -->  
-4 -->  
-5 -->  
-6 -->  < a : a>  
+Inserted in ScopeTable# 1 at position 2, 0
 

@@ -31,14 +31,27 @@ public:
 
     void exitScope()
     {
+        if(this->currentScopeTable==NULL)
+        {
+            cout << "NO CURRENT SCOPE" << endl;
+            return;
+        }
         ScopeTable *temp = this->currentScopeTable;
         cout << "ScopeTable with id " << temp->scopeId << " removed" << endl;
         this->currentScopeTable = this->currentScopeTable->parentScope;
-        this->currentScopeTable->deletedId++;
+        if(this->currentScopeTable != NULL)
+        {
+            this->currentScopeTable->deletedId++;
+        }
     }
 
     bool insertInCurrentST(string name, string type)
     {
+        if(this->currentScopeTable == NULL)
+        {
+            currentScopeTable = new ScopeTable(no_of_buckets);
+            currentScopeTable->scopeId = "1";
+        }
         bool flag = this->currentScopeTable->insertIntoSymbolTable(name, type);
         return flag;
     }
@@ -108,13 +121,16 @@ int main()
             if(tokens[0]=="I")
             {
                 st.insertInCurrentST(tokens[1], tokens[2]);
-            }else if(tokens[0]=="L")
+            }
+            else if(tokens[0]=="L")
             {
                 st.lookUp(tokens[1]);
-            }else if(tokens[0]=="D")
+            }
+            else if(tokens[0]=="D")
             {
                 st.removeFromCurrentST(tokens[1]);
-            }else if(tokens[0]=="P")
+            }
+            else if(tokens[0]=="P")
             {
                 if(tokens[1]=="A")
                 {
@@ -124,13 +140,16 @@ int main()
                 {
                     st.printCurrentScopeTable();
                 }
-            }else if(tokens[0]=="S")
+            }
+            else if(tokens[0]=="S")
             {
                 st.enterScope(no_of_buckets);
-            }else if(tokens[0]=="E")
+            }
+            else if(tokens[0]=="E")
             {
                 st.exitScope();
-            }else
+            }
+            else
             {
                 cout << "Invalid command from input file!" << endl;
                 break;

@@ -31,7 +31,7 @@ public:
         return scopeId;
     }
 
-    int hashing(string name)
+    long hashing(string name)
     {
         unsigned long hashVal = 0;
         int c;
@@ -156,7 +156,8 @@ public:
                 }else
                 {
 //                    cout << "next is null case" << endl;
-                    prev ->setNext(cur->getNext());
+                    prev->setName("");
+                    prev->setType("");
                     //if previous's next pointer is not set to null, then deleting the current pointer causes run time error
 //                    delete cur;
                 }
