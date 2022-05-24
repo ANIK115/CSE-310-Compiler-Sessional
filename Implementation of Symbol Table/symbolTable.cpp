@@ -1,5 +1,10 @@
 #include<iostream>
 #include<string>
+#include <fstream>
+#include <vector>
+#include <algorithm>
+#include <sstream>
+#include <iterator>
 #include "scopeTable.cpp"
 
 using namespace std;
@@ -27,9 +32,9 @@ public:
     void exitScope()
     {
         ScopeTable *temp = this->currentScopeTable;
+        cout << "ScopeTable with id " << temp->scopeId << " removed" << endl;
         this->currentScopeTable = this->currentScopeTable->parentScope;
         this->currentScopeTable->deletedId++;
-        delete temp;
     }
 
     bool insertInCurrentST(string name, string type)
@@ -57,6 +62,7 @@ public:
             ptr = ptr->parentScope;
             location = ptr->lookUp(name);
         }
+        cout << "Not found " << endl;
         return location;
     }
 
@@ -80,15 +86,61 @@ public:
 
 int main()
 {
+    fstream myfile ("input.txt");
+    string line;
+    if (myfile.is_open())
+    {
+        getline(myfile,line);
+        stringstream s(line);
+        s >> no_of_buckets;
+        SymbolTable st(no_of_buckets);
+        while ( getline (myfile,line) )
+        {
+            cout << line << "\n\n";
+            vector<std::string> tokens;
+            string token;
+            stringstream ss(line);
+            while (getline(ss, token, ' '))
+            {
+                tokens.push_back(token);
+            }
 
-    no_of_buckets = 7;
-    SymbolTable st(no_of_buckets);
-    st.insertInCurrentST("a", "a");
-    st.enterScope(no_of_buckets);
-    st.insertInCurrentST("h","h");
-    st.enterScope(no_of_buckets);
-    st.insertInCurrentST("o","o");
-    st.printAllScopeTable();
+            if(tokens[0]=="I")
+            {
+                st.insertInCurrentST(tokens[1], tokens[2]);
+            }else if(tokens[0]=="L")
+            {
+                st.lookUp(tokens[1]);
+            }else if(tokens[0]=="D")
+            {
+                st.removeFromCurrentST(tokens[1]);
+            }else if(tokens[0]=="P")
+            {
+                if(tokens[1]=="A")
+                {
+                    st.printAllScopeTable();
+                }
+                if(tokens[1]=="C")
+                {
+                    st.printCurrentScopeTable();
+                }
+            }else if(tokens[0]=="S")
+            {
+                st.enterScope(no_of_buckets);
+            }else if(tokens[0]=="E")
+            {
+                st.exitScope();
+            }else
+            {
+                cout << "Invalid command from input file!" << endl;
+                break;
+            }
+            cout <<"\n\n";
 
+        }
+        myfile.close();
+    }
+
+    else cout << "Unable to open file";
     return 0;
 }
