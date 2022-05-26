@@ -9,7 +9,7 @@ class ScopeTable //hash table
 {
 public:
 
-    SymbolInfo *syfo; //array of pointers of SymbolInfo type
+    SymbolInfo *syfo;
     ScopeTable *parentScope;
     int deletedId = 0;
     string scopeId= "";
@@ -31,9 +31,9 @@ public:
         return scopeId;
     }
 
-    long hashing(string name)
+    uint32_t hashing(string name)
     {
-        unsigned long hashVal = 0;
+        uint32_t hashVal = 0;
         int c;
         for(int i=0; i<name.size(); i++)
         {
@@ -105,7 +105,6 @@ public:
             cout << "Inserted in ScopeTable# " << scopeId << " at position " << ind << ", " << pos << endl;
             return true;
         }
-        cout << __LINE__ << endl;
     }
 
     bool deleteAnEntry(string symbol)
@@ -158,8 +157,6 @@ public:
 //                    cout << "next is null case" << endl;
                     prev->setName("");
                     prev->setType("");
-                    //if previous's next pointer is not set to null, then deleting the current pointer causes run time error
-//                    delete cur;
                 }
                 cout << "Found in ScopeTable# "<< scopeId << " at position "<< location << ", " <<ind <<endl;
                 cout << "Deleted Entry " << location << ", " << ind << " from current ScopeTable" << endl;

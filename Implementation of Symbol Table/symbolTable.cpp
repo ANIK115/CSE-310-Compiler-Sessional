@@ -9,6 +9,7 @@
 
 using namespace std;
 
+
 class SymbolTable
 {
 public:
@@ -23,6 +24,14 @@ public:
 
     void enterScope(int n)
     {
+        if(this->currentScopeTable == NULL)
+        {
+            currentScopeTable = new ScopeTable(no_of_buckets);
+            currentScopeTable->scopeId = "1";
+            cout <<"New ScopeTable with id " << this->currentScopeTable->scopeId <<" created\n";
+
+            return;
+        }
         ScopeTable *st = new ScopeTable(n);
         st->parentScope = this->currentScopeTable;
         this->currentScopeTable = st;
@@ -58,12 +67,22 @@ public:
 
     bool removeFromCurrentST(string name)
     {
+        if(this->currentScopeTable==NULL)
+        {
+            cout << "NO CURRENT SCOPE" << endl;
+            return false;
+        }
         bool flag = this->currentScopeTable->deleteAnEntry(name);
         return flag;
     }
 
     SymbolInfo* lookUp(string name)
     {
+        if(this->currentScopeTable==NULL)
+        {
+            cout << "NO CURRENT SCOPE" << endl;
+            return NULL;
+        }
         ScopeTable *ptr = currentScopeTable;
         SymbolInfo *location = ptr->lookUp(name);
         while(ptr->parentScope != NULL)
@@ -81,12 +100,22 @@ public:
 
     void printCurrentScopeTable()
     {
+        if(this->currentScopeTable==NULL)
+        {
+            cout << "NO CURRENT SCOPE" << endl;
+            return;
+        }
         cout << "ScopeTable # " << this->currentScopeTable->scopeId << endl;
         this->currentScopeTable->print();
     }
 
     void printAllScopeTable()
     {
+        if(this->currentScopeTable==NULL)
+        {
+            cout << "NO CURRENT SCOPE" << endl;
+            return;
+        }
         ScopeTable *ptr = this->currentScopeTable;
         while(ptr!= NULL)
         {
