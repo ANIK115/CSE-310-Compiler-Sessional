@@ -11,7 +11,9 @@ public:
 
     SymbolInfo()
     {
-
+        name = "";
+        type = "";
+        next = NULL;
     }
 
     SymbolInfo(string name, string type)

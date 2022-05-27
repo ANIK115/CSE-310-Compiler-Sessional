@@ -9,7 +9,7 @@ class ScopeTable //hash table
 {
 public:
 
-    SymbolInfo *syfo;
+    SymbolInfo *syfo; //array of pointers of SymbolInfo type
     ScopeTable *parentScope;
     int deletedId = 0;
     string scopeId= "";
@@ -22,10 +22,9 @@ public:
 
     string giveUniqueId()
     {
-        ScopeTable *ptr = parentScope;
-        if(ptr != NULL)
+        if(parentScope != NULL)
         {
-            scopeId += ptr->scopeId+".";
+            scopeId += parentScope->scopeId+".";
         }
         scopeId += to_string((parentScope->deletedId+1));
         return scopeId;
@@ -89,9 +88,10 @@ public:
         }
         if(ptr->getName()== symbolName)
         {
-            cout << "<" << symbolName << "," << symbolType << "> already exists in current ScopeTable" << endl;
+            cout << "<" << symbolName << "," << symbolType << "> already exists in current ScopeTable" << endl;;
             return false;
-        }else if(ptr->getName()=="")
+        }
+        else if(ptr->getName()=="")
         {
             cout << "Inserted in ScopeTable# " << scopeId << " at position " << ind << ", " << pos << endl;
             ptr->setName(symbolName);
@@ -149,14 +149,17 @@ public:
                     //pointer is deleted!
                     cur->setName(cur->getNext()->getName());
                     cur->setType(cur->getNext()->getType());
+                    SymbolInfo * temp = cur->getNext();
                     cur->setNext(cur->getNext()->getNext());
-                    delete cur->getNext();
-
-                }else
+                    delete temp;
+                }
+                else
                 {
 //                    cout << "next is null case" << endl;
                     prev->setName("");
                     prev->setType("");
+                    //if previous's next pointer is not set to null, then deleting the current pointer causes run time error
+//                    delete cur;
                 }
                 cout << "Found in ScopeTable# "<< scopeId << " at position "<< location << ", " <<ind <<endl;
                 cout << "Deleted Entry " << location << ", " << ind << " from current ScopeTable" << endl;
@@ -173,7 +176,8 @@ public:
             if(ptr-> getName()=="")
             {
                 cout << i << " -->" << endl;
-            }else
+            }
+            else
             {
                 SymbolInfo *auxPtr = ptr;
                 cout << i << " --> ";
@@ -193,4 +197,3 @@ public:
         delete[] syfo;
     }
 };
-

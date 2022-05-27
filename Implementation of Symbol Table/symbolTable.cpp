@@ -1,10 +1,4 @@
-#include<iostream>
-#include<string>
-#include <fstream>
-#include <vector>
-#include <algorithm>
-#include <sstream>
-#include <iterator>
+#include<bits/stdc++.h>
 #include "scopeTable.cpp"
 
 using namespace std;
@@ -29,7 +23,6 @@ public:
             currentScopeTable = new ScopeTable(no_of_buckets);
             currentScopeTable->scopeId = "1";
             cout <<"New ScopeTable with id " << this->currentScopeTable->scopeId <<" created\n";
-
             return;
         }
         ScopeTable *st = new ScopeTable(n);
@@ -52,6 +45,7 @@ public:
         {
             this->currentScopeTable->deletedId++;
         }
+        delete temp;
     }
 
     bool insertInCurrentST(string name, string type)
@@ -85,14 +79,19 @@ public:
         }
         ScopeTable *ptr = currentScopeTable;
         SymbolInfo *location = ptr->lookUp(name);
+        if(location != NULL)
+        {
+            return location;
+        }
         while(ptr->parentScope != NULL)
         {
-            if(location != NULL)
-            {
-                return location;
-            }
             ptr = ptr->parentScope;
             location = ptr->lookUp(name);
+            if(location != NULL)
+            {
+                cout << "Found!!!!!!!!!!" << endl;
+                return location;
+            }
         }
         cout << "Not found " << endl;
         return location;
@@ -123,6 +122,11 @@ public:
             ptr->print();
             ptr = ptr->parentScope;
         }
+        delete ptr;
+    }
+    ~SymbolTable()
+    {
+        delete currentScopeTable;
     }
 };
 
@@ -136,7 +140,7 @@ int main()
         stringstream s(line);
         s >> no_of_buckets;
         SymbolTable st(no_of_buckets);
-        while ( getline (myfile,line) )
+        while (getline (myfile,line, '\n') )
         {
             cout << line << "\n\n";
             vector<std::string> tokens;
@@ -189,6 +193,6 @@ int main()
         myfile.close();
     }
 
-    else cout << "Unable to open file";
+    else cout << "Unable to open file!!";
     return 0;
 }
