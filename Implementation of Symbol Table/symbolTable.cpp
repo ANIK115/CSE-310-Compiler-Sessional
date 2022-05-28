@@ -89,7 +89,6 @@ public:
             location = ptr->lookUp(name);
             if(location != NULL)
             {
-                cout << "Found!!!!!!!!!!" << endl;
                 return location;
             }
         }
@@ -196,3 +195,4 @@ int main()
     else cout << "Unable to open file!!";
     return 0;
 }
+

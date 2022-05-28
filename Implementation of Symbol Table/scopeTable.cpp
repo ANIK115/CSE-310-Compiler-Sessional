@@ -9,19 +9,24 @@ class ScopeTable //hash table
 {
 public:
 
-    SymbolInfo *syfo; //array of pointers of SymbolInfo type
+    SymbolInfo **syfo; //pointer for the hash table
     ScopeTable *parentScope;
     int deletedId = 0;
     string scopeId= "";
 
     ScopeTable(int n)
     {
-        syfo = new SymbolInfo[n];
+        syfo = new SymbolInfo*[n];
+        for(int i=0; i<n; i++)
+        {
+            syfo[i] = NULL;
+        }
         parentScope = NULL;
     }
 
     string giveUniqueId()
     {
+        //if the parent scope exist, then concatenate parent scope's id
         if(parentScope != NULL)
         {
             scopeId += parentScope->scopeId+".";
@@ -44,13 +49,10 @@ public:
 
     SymbolInfo* lookUp(string symbolName)
     {
-        SymbolInfo *cur = this->syfo;
+        SymbolInfo **ptr = this->syfo;
         int ind = hashing(symbolName);
-        for(int i=0; i<ind; i++)
-        {
-            cur++;
-        }
         int auxInd = 0;
+        SymbolInfo *cur = ptr[ind];
         while(cur!= NULL)
         {
             if(cur->getName() == symbolName)
@@ -58,7 +60,7 @@ public:
                 cout << "Found in ScopeTable# " << scopeId << " at position " << ind << ", " << auxInd << endl;
                 return cur;
             }
-            cur = cur->getNext();
+            cur = cur->getNext(); //traversing the particular row of the hash table
             auxInd++;
         }
         return cur;
@@ -66,120 +68,90 @@ public:
 
     bool insertIntoSymbolTable(string symbolName, string symbolType)
     {
-        SymbolInfo *ptr = this->syfo;
+        SymbolInfo **ptr = this->syfo;
         int ind = hashing(symbolName);
-        for(int i=0; i<ind; i++)
-        {
-            ptr++;
-        }
         int pos = 0;
-        while(ptr->getNext()!= NULL)
+
+        SymbolInfo *cur = ptr[ind];
+        while(true)
         {
-            if(ptr->getName()== symbolName)
+            if(cur == NULL)
+            {
+                //if the hash table index is empty, simply insert the symbol in that hash table
+                ptr[ind] = new SymbolInfo(symbolName, symbolType);
+                cout << "Inserted in ScopeTable# " << scopeId << " at position " << ind << ", " << pos << endl;
+                return true;
+            }
+            if(cur->getName()== symbolName)
             {
                 cout << "<" << symbolName << "," << symbolType << "> already exists in current ScopeTable" << endl;
                 return false;
             }
-
-            if(ptr->getName()=="")
-                break;
-            ptr = ptr->getNext();
+            if(cur->getNext() == NULL)
+            {
+                //inserting at the end
+                pos++;
+                cur->setNext(symbolName, symbolType);
+                cout << "Inserted in ScopeTable# " << scopeId << " at position " << ind << ", " << pos << endl;
+                return true;
+            }
+            cur = cur->getNext();
             pos++;
-        }
-        if(ptr->getName()== symbolName)
-        {
-            cout << "<" << symbolName << "," << symbolType << "> already exists in current ScopeTable" << endl;;
-            return false;
-        }
-        else if(ptr->getName()=="")
-        {
-            cout << "Inserted in ScopeTable# " << scopeId << " at position " << ind << ", " << pos << endl;
-            ptr->setName(symbolName);
-            ptr->setType(symbolType);
-            return true;
-        }
-        else
-        {
-            pos++;
-            ptr->setNext(symbolName, symbolType);
-            cout << "Inserted in ScopeTable# " << scopeId << " at position " << ind << ", " << pos << endl;
-            return true;
         }
     }
 
     bool deleteAnEntry(string symbol)
     {
         int location = hashing(symbol);
-        SymbolInfo *cur = this->syfo;
+        SymbolInfo **ptr = this->syfo;
+        SymbolInfo *cur = ptr[location];
         int ind = 0;
-        for(int i=0; i<location; i++)
+        if(cur == NULL)
         {
-            cur++;
-        }
-        //if the location is empty, then the symbol is not present in the symbol table
-        if(cur->getName()=="")
-        {
-            cout <<  "Not found"<< endl;
+            cout << "Not found\n";
             return false;
         }
-
-        else
+        if(cur->getName()==symbol)
         {
-            bool flag = false;
-            SymbolInfo *prev=cur;
-            while(cur!= NULL)
+            //if the desired symbol is at the beginning of a row
+            ptr[location] = cur->getNext();
+            delete cur;
+            cout << "Found in ScopeTable# "<< scopeId << " at position "<< location << ", " <<ind <<endl;
+            cout << "Deleted Entry " << location << ", " << ind << " from current ScopeTable" << endl;
+            return true;
+        }
+        SymbolInfo *prev = cur;
+        while(cur != NULL)
+        {
+            //if the desired value is at anywhere but beginning
+            if(cur->getName()==symbol)
             {
-//                cout << "In while loop of deleteAnEntry" << endl;
-                if(cur->getName()==symbol)
-                {
-                    flag = true;
-                    break;
-                }
-                ind++;
-                prev = cur;
-                cur = cur->getNext();
-            }
-            if(flag)
-            {
-                if(cur->getNext() != NULL)
-                {
-//                    cout << "next is not null case" << endl;
-                    //if the symbol is in the first pointer of collision linked list, then deleting the pointer causes
-                    //to break down the array of pointers chain. therefore, the next pointer's data is kept here and the next
-                    //pointer is deleted!
-                    cur->setName(cur->getNext()->getName());
-                    cur->setType(cur->getNext()->getType());
-                    SymbolInfo * temp = cur->getNext();
-                    cur->setNext(cur->getNext()->getNext());
-                    delete temp;
-                }
-                else
-                {
-//                    cout << "next is null case" << endl;
-                    prev->setName("");
-                    prev->setType("");
-                    //if previous's next pointer is not set to null, then deleting the current pointer causes run time error
-//                    delete cur;
-                }
+                prev->setNext(cur->getNext());
+                delete cur;
                 cout << "Found in ScopeTable# "<< scopeId << " at position "<< location << ", " <<ind <<endl;
                 cout << "Deleted Entry " << location << ", " << ind << " from current ScopeTable" << endl;
+                return true;
             }
-            return flag;
+            prev = cur;
+            cur = cur->getNext();
+            ind++;
         }
+        cout << "Not found!" << endl;
+        return false;
     }
 
     void print()
     {
-        SymbolInfo *ptr = this->syfo;
+        SymbolInfo **ptr = this->syfo;
         for(int i=0; i<no_of_buckets; i++)
         {
-            if(ptr-> getName()=="")
+            if(ptr == NULL)
             {
                 cout << i << " -->" << endl;
             }
             else
             {
-                SymbolInfo *auxPtr = ptr;
+                SymbolInfo *auxPtr = *ptr;
                 cout << i << " --> ";
                 while(auxPtr != NULL)
                 {
@@ -194,6 +166,11 @@ public:
 
     ~ScopeTable()
     {
+        for(int i=0; i<no_of_buckets; i++)
+        {
+            delete syfo[i];
+        }
         delete[] syfo;
     }
 };
+
