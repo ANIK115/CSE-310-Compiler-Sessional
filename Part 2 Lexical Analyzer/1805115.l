@@ -1,7 +1,9 @@
 %option noyywrap
 
-%x BEGIN_STRING_STATE
-%x BEGIN_MULTILINE_STRING_STATE
+%x STRING_STATE
+%x STRING_STATE_2
+%x SINGLE_LINE_COMMENT
+%x MULTI_LINE_COMMENT
 
 %{
 #include<stdio.h>
@@ -14,7 +16,9 @@ int no_of_buckets = 7;
 int line_count=1;
 int errors = 0;
 int begin_string_line;
+int begin_comment_line;
 string str = "";
+string comment = "";
 
 FILE *logout;
 FILE *tokenout;
@@ -412,6 +416,8 @@ ID [a-zA-Z_][a-zA-Z0-9_]*
 ANYTHING .
 IC '
 METACHARS [nta'\\frbv0"]
+SINGLECOMMENT [/][/]
+MULTILINECOMMENT [/][\*]
 
 %%
 
@@ -609,7 +615,7 @@ METACHARS [nta'\\frbv0"]
 		}
 		
 
-{DIGIT}*\.?{DIGIT}+E?-?({DIGIT}|{DIGIT}*)	{
+{DIGIT}*\.?{DIGIT}+E?[+-]?({DIGIT}|{DIGIT}*)	{
 			fprintf(tokenout,"<CONST_FLOAT,%s>",yytext);
 			fprintf(logout,"Line no %d: TOKEN <CONST_FLOAT> Lexeme %s found\n\n",line_count,yytext);
 			//insert in symbol table and print symbol table content(only non empty buckets)
@@ -618,6 +624,25 @@ METACHARS [nta'\\frbv0"]
 			else fprintf(logout, "%s already exixsts\n\n", yytext);
 				
 		}
+		
+((\.)*{DIGIT}*)*	{
+			fprintf(logout,"Error at line no %d: Too many decimal points %s\n\n",line_count,yytext);
+			errors++;
+
+		}
+
+{DIGIT}*\.?{DIGIT}+E?[+-]?({DIGIT}|{DIGIT}*)(\.{DIGIT}+)+ {
+			fprintf(logout,"Error at line no %d: Ill formed number %s\n\n",line_count,yytext);
+			errors++;
+		
+		}
+		
+({DIGIT}+{ID}+)+	{
+			fprintf(logout,"Error at line no %d: Invalid prefix on ID or invalid suffix on Number %s\n\n",line_count,yytext);
+			errors++;
+
+		}		
+
 		
 {ID}		{
 			fprintf(tokenout,"<ID,%s>",yytext);
@@ -698,44 +723,44 @@ METACHARS [nta'\\frbv0"]
 ["]		{
 			begin_string_line = line_count;
 			printf("string begins\n\n");
-			BEGIN BEGIN_STRING_STATE;
-			
+			str ="";
+			BEGIN STRING_STATE;
+		
 		}
 		
-<BEGIN_STRING_STATE>["]		{
+<STRING_STATE>["]		{
 
 			fprintf(tokenout,"<STRING,%s>",str.c_str());
 			fprintf(logout,"Line no %d: TOKEN <STRING> Lexeme \"%s\" found\n\n",begin_string_line,str.c_str());
-			str = "";
 			printf("string ends....\n");
 			BEGIN INITIAL;
 
 		}
 		
-<BEGIN_STRING_STATE>[^\n\\"]* {
+<STRING_STATE>[^\n\\"]* {
 			str += yytext;
 			printf("catching strings....\n");
 		}
 		
-<BEGIN_STRING_STATE>[\n] {
+<STRING_STATE>[\n] {
 			fprintf(logout,"Error at line no %d: Unfinished string \"%s\n\n",begin_string_line, str.c_str());
+			line_count++;
 			errors++;
-			str = "";
 			BEGIN INITIAL;
 		}
 		
-<BEGIN_STRING_STATE>[\\]	{
-			printf("entering multi line string state....\n");
-			BEGIN BEGIN_MULTILINE_STRING_STATE;
+<STRING_STATE>[\\]	{
+			BEGIN STRING_STATE_2;
 		}
 		
-<BEGIN_MULTILINE_STRING_STATE>{NEWLINE} {
-			printf("got a new line in multi line string state....\n");
+		
+<STRING_STATE_2>{WHITESPACE}*{NEWLINE}	{
 			line_count++;
-			BEGIN BEGIN_STRING_STATE;
+			BEGIN STRING_STATE;
+
 		}
 		
-<BEGIN_MULTILINE_STRING_STATE>{METACHARS} {
+<STRING_STATE>[\\]{METACHARS} {
 			printf("catching meta characters in string....\n");
 			
 			char b = yytext[0];
@@ -762,27 +787,75 @@ METACHARS [nta'\\frbv0"]
 			if(b=='\"')
 				str+= "\"";
 			
-			BEGIN BEGIN_STRING_STATE;
 
 		}
 		
-<BEGIN_MULTILINE_STRING_STATE>^{WHITESPACE} {
+<STRING_STATE>[\\]. {
+			str+= yytext[1];
 			
-			fprintf(logout,"Line no %d: Unrecognized escape character \"%s\n\n", line_count, yytext);
-			str = "";
+		}
+		
+{SINGLECOMMENT} 	{
+			begin_comment_line = line_count;
+			comment ="//";
+			BEGIN SINGLE_LINE_COMMENT;
+
+		}
+		
+<SINGLE_LINE_COMMENT>{NEWLINE}|[\\][^\n]* {
+			fprintf(logout, "Line no %d: Token <COMMENT> Lexeme %s found\n\n",begin_comment_line, comment.c_str());
+			line_count++;
+			BEGIN INITIAL;
+
+		}
+		
+<SINGLE_LINE_COMMENT>[\\]{NEWLINE}	{
+			line_count++;
+
+		}
+		
+<SINGLE_LINE_COMMENT>[^\n]* {
+			comment += yytext;
+
+		}
+		
+{MULTILINECOMMENT}		{
+			begin_comment_line = line_count;
+			comment = "/*";
+			BEGIN MULTI_LINE_COMMENT;
+		}
+		
+<MULTI_LINE_COMMENT>[\*][/]	{
+			comment += "*/";
+			fprintf(logout, "Line no %d: Token <COMMENT> Lexeme %s found\n\n",begin_comment_line, comment.c_str());
+			BEGIN INITIAL;
+		}
+		
+<MULTI_LINE_COMMENT>{NEWLINE}   {
+			line_count++;
+			comment += "\n";
+		}
+		
+<MULTI_LINE_COMMENT><<EOF>> {
+			fprintf(logout,"Line no %d: Unfinished comment %s\n\n",begin_comment_line, comment.c_str());
 			errors++;
 			BEGIN INITIAL;
 		}
-					
 		
+<MULTI_LINE_COMMENT>{ANYTHING}  {
+			comment += yytext;
+
+		}
+
+				
+
 {WHITESPACE}	{
 		
 		}
 			
 {ANYTHING}	{
 		
-			fprintf(logout,"Line no %d: unhandled pattern found for %s\n\n",line_count,yytext);
-			printf("Error!\n\n\n\n");
+			fprintf(logout,"Line no %d: Unrecognized character %s found\n\n",line_count,yytext);
 		}
 
 %%
