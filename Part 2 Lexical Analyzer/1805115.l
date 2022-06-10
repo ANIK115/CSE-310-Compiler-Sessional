@@ -18,6 +18,7 @@ int errors = 0;
 int begin_string_line;
 int begin_comment_line;
 string str = "";
+string inStr = "";
 string comment = "";
 
 FILE *logout;
@@ -244,7 +245,7 @@ public:
             {
             	if(flag)
         	{
-        		fprintf(fptr, "ScopeTable # %s\n", this->scopeId.c_str());
+        		fprintf(fptr, "\nScopeTable # %s\n", this->scopeId.c_str());
         		flag = false;
         	}
         	
@@ -255,7 +256,7 @@ public:
                     fprintf(fptr, "<%s : %s> ", auxPtr->getName().c_str(), auxPtr->getType().c_str());
                     auxPtr = auxPtr->getNext();
                 }
-                fprintf(fptr, "\n\n");
+                fprintf(fptr, "\n");
             }
             ptr++;
         }
@@ -385,7 +386,7 @@ public:
         ScopeTable *ptr = this->currentScopeTable;
         while(ptr!= NULL)
         {
-            cout << "ScopeTable # " << ptr->scopeId << endl;
+            cout << "\nScopeTable # " << ptr->scopeId << endl;
             ptr->print();
             ptr->printInLogFile();
             ptr = ptr->parentScope;
@@ -424,83 +425,83 @@ MULTILINECOMMENT [/][\*]
 {NEWLINE} {line_count++;}
 
 "if"	{
-			fprintf(tokenout,"<IF>");
-			fprintf(logout,"Line no %d: TOKEN <IF> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<IF> ");
+			fprintf(logout,"\nLine no %d: TOKEN <IF> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "else"	{
-			fprintf(tokenout,"<ELSE>");
-			fprintf(logout,"Line no %d: TOKEN <ELSE> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<ELSE> ");
+			fprintf(logout,"\nLine no %d: TOKEN <ELSE> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "for"	{	
-			fprintf(tokenout, "<FOR>");
-			fprintf(logout, "Line no %d: TOKEN <FOR> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<FOR> ");
+			fprintf(logout, "\nLine no %d: TOKEN <FOR> Lexeme %s found\n",line_count,yytext);
 		}	
 
 "do" 	{		
-			fprintf(tokenout, "<DO>");
-			fprintf(logout, "Line no %d: TOKEN <DO> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<DO> ");
+			fprintf(logout, "\nLine no %d: TOKEN <DO> Lexeme %s found\n",line_count,yytext);
 		}
 
 "int"	{
-			fprintf(tokenout, "<INT>");
-			fprintf(logout, "Line no %d: TOKEN <INT> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<INT> ");
+			fprintf(logout, "\nLine no %d: TOKEN <INT> Lexeme %s found\n",line_count,yytext);
 		}
 
 "float"	{
-			fprintf(tokenout, "<FLOAT>");
-			fprintf(logout, "Line no %d: TOKEN <FLOAT> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<FLOAT> ");
+			fprintf(logout, "\nLine no %d: TOKEN <FLOAT> Lexeme %s found\n",line_count,yytext);
 		}
 
 "void"	{
-			fprintf(tokenout, "<VOID>");
-			fprintf(logout, "Line no %d: TOKEN <VOID> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<VOID> ");
+			fprintf(logout, "\nLine no %d: TOKEN <VOID> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "switch"	{
-			fprintf(tokenout, "<SWITCH>");
-			fprintf(logout, "Line no %d: TOKEN <SWITCH> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<SWITCH> ");
+			fprintf(logout, "\nLine no %d: TOKEN <SWITCH> Lexeme %s found\n",line_count,yytext);
 		}
 
 "default"	{
-			fprintf(tokenout, "<DEFAULT>");
-			fprintf(logout, "Line no %d: TOKEN <DEFAULT> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<DEFAULT> ");
+			fprintf(logout, "\nLine no %d: TOKEN <DEFAULT> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "while"	{
-			fprintf(tokenout, "<WHILE>");
-			fprintf(logout, "Line no %d: TOKEN <WHILE> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<WHILE> ");
+			fprintf(logout, "\nLine no %d: TOKEN <WHILE> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "break"	{
-			fprintf(tokenout, "<BREAK>");
-			fprintf(logout, "Line no %d: TOKEN <BREAK> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<BREAK> ");
+			fprintf(logout, "\nLine no %d: TOKEN <BREAK> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "char"	{
-			fprintf(tokenout, "<CHAR>");
-			fprintf(logout, "Line no %d: TOKEN <CHAR> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout, "<CHAR> ");
+			fprintf(logout, "\nLine no %d: TOKEN <CHAR> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "double"	{
-			fprintf(tokenout,"<DOUBLE>");
-			fprintf(logout,"Line no %d: TOKEN <DOUBLE> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<DOUBLE> ");
+			fprintf(logout,"\nLine no %d: TOKEN <DOUBLE> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "return"	{
-			fprintf(tokenout,"<RETURN>");
-			fprintf(logout,"Line no %d: TOKEN <RETURN> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<RETURN> ");
+			fprintf(logout,"\nLine no %d: TOKEN <RETURN> Lexeme %s found\n",line_count,yytext);
 		}
 	
 "case"	{
-			fprintf(tokenout,"<CASE>");
-			fprintf(logout,"Line no %d: TOKEN <CASE> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<CASE> ");
+			fprintf(logout,"\nLine no %d: TOKEN <CASE> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "continue"	{
-			fprintf(tokenout,"<CONTINUE>");
-			fprintf(logout,"Line no %d: TOKEN <CONTINUE> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<CONTINUE> ");
+			fprintf(logout,"\nLine no %d: TOKEN <CONTINUE> Lexeme %s found\n",line_count,yytext);
 		}
 		
 		
@@ -509,289 +510,304 @@ MULTILINECOMMENT [/][\*]
 "+"		|
 
 "-"		{
-			fprintf(tokenout,"<ADDOP,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <ADDOP> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<ADDOP,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <ADDOP> Lexeme %s found\n",line_count,yytext);
 			//insert in symbol table and print symbol table content(only non empty buckets)
 			// There is a '|' in "+"'s rule, this means match execute the action for following rule
 		}
 		
 "*"|"/"|"%"	{
 		
-			fprintf(tokenout,"<MULOP,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <MULOP> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<MULOP,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <MULOP> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "++"|"--"	{
 		
-			fprintf(tokenout,"<INCOP,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <INCOP> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<INCOP,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <INCOP> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "<"|"<="|">"|">="|"=="|"!="
 		{
 		
-			fprintf(tokenout,"<RELOP,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <RELOP> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<RELOP,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <RELOP> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "="		{
 		
-			fprintf(tokenout,"<ASSIGNOP,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <ASSIGNOP> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<ASSIGNOP,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <ASSIGNOP> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "&&"|"||"	{
 		
-			fprintf(tokenout,"<LOGICOP,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <MULOP> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<LOGICOP,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <MULOP> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "!"		{
 		
-			fprintf(tokenout,"<NOT,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <NOT> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<NOT,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <NOT> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "("		{
 		
-			fprintf(tokenout,"<LPAREN,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <LPAREN> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<LPAREN,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <LPAREN> Lexeme %s found\n",line_count,yytext);
 		}
 		
 ")"		{
 		
-			fprintf(tokenout,"<RPAREN,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <RPAREN> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<RPAREN,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <RPAREN> Lexeme %s found\n",line_count,yytext);
 		}
 		
 
 "{"		{
 		
-			fprintf(tokenout,"<LCURL,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <LCURL> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<LCURL,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <LCURL> Lexeme %s found\n",line_count,yytext);
 			st.enterScope(no_of_buckets);
 		}
 		
 "}"		{
 		
-			fprintf(tokenout,"<MULOP,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <MULOP> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<MULOP,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <MULOP> Lexeme %s found\n",line_count,yytext);
 			st.exitScope();
 		}
 		
 "["		{
 		
-			fprintf(tokenout,"<LTHIRD,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <LTHIRD> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<LTHIRD,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <LTHIRD> Lexeme %s found\n",line_count,yytext);
 		}
 		
 "]"		{
 		
-			fprintf(tokenout,"<RTHIRD,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <RTHIRD> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<RTHIRD,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <RTHIRD> Lexeme %s found\n",line_count,yytext);
 		}
 		
 ","		{
 		
-			fprintf(tokenout,"<COMMA,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <COMMA> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<COMMA,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <COMMA> Lexeme %s found\n",line_count,yytext);
 		}
 		
 ";"		{
 		
-			fprintf(tokenout,"<SEMICOLON,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <SEMICOLON> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<SEMICOLON,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <SEMICOLON> Lexeme %s found\n",line_count,yytext);
 		}
 		
 {DIGIT}+ 	{
-			fprintf(tokenout,"<CONST_INT,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <CONST_INT> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<CONST_INT,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <CONST_INT> Lexeme %s found\n",line_count,yytext);
 			//insert in symbol table and print symbol table content(only non empty buckets)
 			bool flag = st.insertInCurrentST(yytext, "CONST_INT");
 			if(flag) st.printAllScopeTable();
-			else fprintf(logout, "%s already exists\n\n", yytext);
+			else fprintf(logout, "\n%s already exists in current ScopeTable\n", yytext);
 				
 				
 		}
 		
 
 {DIGIT}*\.?{DIGIT}+E?[+-]?({DIGIT}|{DIGIT}*)	{
-			fprintf(tokenout,"<CONST_FLOAT,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <CONST_FLOAT> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<CONST_FLOAT,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <CONST_FLOAT> Lexeme %s found\n",line_count,yytext);
 			//insert in symbol table and print symbol table content(only non empty buckets)
 			bool flag = st.insertInCurrentST(yytext, "CONST_FLOAT");
 			if(flag) st.printAllScopeTable();
-			else fprintf(logout, "%s already exixsts\n\n", yytext);
+			else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", yytext);
 				
 		}
 		
 ((\.)*{DIGIT}*)*	{
-			fprintf(logout,"Error at line no %d: Too many decimal points %s\n\n",line_count,yytext);
+			fprintf(logout,"\nError at line no %d: Too many decimal points %s\n",line_count,yytext);
 			errors++;
 
 		}
 
 {DIGIT}*\.?{DIGIT}+E?[+-]?({DIGIT}|{DIGIT}*)(\.{DIGIT}+)+ {
-			fprintf(logout,"Error at line no %d: Ill formed number %s\n\n",line_count,yytext);
+			fprintf(logout,"\nError at line no %d: Ill formed number %s\n",line_count,yytext);
 			errors++;
 		
 		}
 		
 ({DIGIT}+{ID}+)+	{
-			fprintf(logout,"Error at line no %d: Invalid prefix on ID or invalid suffix on Number %s\n\n",line_count,yytext);
+			fprintf(logout,"\nError at line no %d: Invalid prefix on ID or invalid suffix on Number %s\n",line_count,yytext);
 			errors++;
 
 		}		
 
 		
 {ID}		{
-			fprintf(tokenout,"<ID,%s>",yytext);
-			fprintf(logout,"Line no %d: TOKEN <ID> Lexeme %s found\n\n",line_count,yytext);
+			fprintf(tokenout,"<ID,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <ID> Lexeme %s found\n",line_count,yytext);
 			//insert in symbol table and print symbol table content(only non empty buckets)
 			bool flag = st.insertInCurrentST(yytext, "ID");
 			if(flag) st.printAllScopeTable();
-			else fprintf(logout, "%s already exixsts\n\n", yytext);
+			else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", yytext);
 
 		}
 		
 {IC}{IC}	{
-			fprintf(logout,"Error at line no %d: Empty character constant error %s\n\n",line_count,yytext);
+			fprintf(logout,"\nError at line no %d: Empty character constant error %s\n",line_count,yytext);
 			errors++;
 		}
 		
-{IC}[\\]{METACHARS}{IC} {
+{IC}[\\]{ANYTHING}{IC} {
+			//printf("catching metachars in character literals.................\n\n");
 			char a = yytext[1];
 			char b = yytext[2];
-			fprintf(tokenout, "<CONST_CHAR,%c%c>", a,b);
-			fprintf(logout, "Line no %d: TOKEN <CONST_CHAR> Lexeme %c%c found\n\n",line_count,a,b);
-			string name="";
-			if(b=='n')
-				name = "\n";
-			if(b=='t')
-				name = "\t";
-			if(b=='a')
-				name = "\a";
-			if(b=='f')
-				name = "\f";
-			if(b=='r')
-				name = "\r";
-			if(b=='b')
-				name = "\b";
-			if(b=='v')
-				name = "\v";
-			if(b=='\\')
-				name ="\\";
-			if(b=='\'')
-				name = "'";
-			if(b=='\0')
-				name = "\0";
+			string name;
+			string tokenName= "";
+			if(b=='n') {
+				name = "'\\n'"; tokenName += "\n"; }
+			if(b=='t') {
+				name = "'\\t'"; tokenName += "\t"; }
+			else if(b=='a') {
+				name = "'\\a'"; tokenName += "\a"; }
+			else if(b=='f') {
+				name = "'\\f'"; tokenName += "\f"; }
+			else if(b=='r') {
+				name = "'\\r'"; tokenName += "\r"; }
+			else if(b=='b') {
+				name = "'\\b'"; tokenName += "\b"; }
+			else if(b=='v') {
+				name = "'\\v'"; tokenName += "\v"; }
+			else if(b=='\\') {
+				name ="'\\\\'"; tokenName += "\\"; }
+			else if(b=='\'') {
+				name = "'\''"; tokenName += "'"; }
+			else if(b=='\0') {
+				name = "'\\0'"; tokenName += "\0"; }
+			else
+			{
+				name = "'\\";
+				name += b;
+				name += "'";
+				tokenName = "";
+				tokenName += b;
+			}
 			
+			fprintf(tokenout, "<CONST_CHAR,%s> ", tokenName.c_str());
+			fprintf(logout, "\nLine no %d: TOKEN <CONST_CHAR> Lexeme %s found --> <CHAR_CONST,%s >\n",line_count,name.c_str(), tokenName.c_str());
 			
 			bool flag = st.insertInCurrentST(name, "CONST_CHAR");
 			if(flag) st.printAllScopeTable();
-			else fprintf(logout, "%s already exixsts\n\n", name.c_str());
+			else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", name.c_str());
 
 		}
 
 		
 {IC}[^\\]{IC}	{
 			char cl = yytext[1];
-			fprintf(tokenout,"<CONST_CHAR,%c>",cl);
-			fprintf(logout,"Line no %d: TOKEN <CONST_CHAR> Lexeme %c found\n\n",line_count,cl);
-			//insert in symbol table and print symbol table content(only non empty buckets)
-			string name = "";
+			fprintf(tokenout,"<CONST_CHAR,%c> ",cl);
+			string name = "'";
 			name += cl;
+			name += "'";
+			fprintf(logout, "\nLine no %d: TOKEN <CONST_CHAR> Lexeme %s found --> <CHAR_CONST,%c >\n",line_count,name.c_str(),cl);
+			//insert in symbol table and print symbol table content(only non empty buckets)
 			bool flag = st.insertInCurrentST(name, "CONST_CHAR");
 			if(flag) st.printAllScopeTable();
-			else fprintf(logout, "%c already exixsts\n\n", cl);
+			else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", name.c_str());
 
 		}
 		
 		
-{IC}[^\']*|{IC}[\\]{IC}	{
+{IC}[^'\n]*|{IC}[\\]{IC}	{
 			
-			fprintf(logout,"Error at line no %d: Unterminated character %s\n\n",line_count,yytext);
+			fprintf(logout,"\nError at line no %d: Unterminated character %s\n",line_count,yytext);
 			errors++;
 			}
 			
 {IC}{ANYTHING}*{IC}		{
 			
-			fprintf(logout,"Error at line no %d: Multi character constant error %s\n\n",line_count,yytext);
+			fprintf(logout,"\nError at line no %d: Multi character constant error %s\n",line_count,yytext);
 			errors++;
 			}
 			
 ["]		{
 			begin_string_line = line_count;
-			printf("string begins\n\n");
-			str ="";
+			str ="\"";
+			inStr = "\"";
 			BEGIN STRING_STATE;
 		
 		}
 		
-<STRING_STATE>["]		{
-
-			fprintf(tokenout,"<STRING,%s>",str.c_str());
-			fprintf(logout,"Line no %d: TOKEN <STRING> Lexeme \"%s\" found\n\n",begin_string_line,str.c_str());
-			printf("string ends....\n");
+<STRING_STATE>["]	{
+			str += "\"";
+			inStr += "\"";
+			fprintf(tokenout,"<STRING,%s> ",str.c_str());
+			fprintf(logout,"\nLine no %d: TOKEN <STRING> Lexeme %s found --> <STRING, %s>\n",begin_string_line,inStr.c_str(), str.c_str());
 			BEGIN INITIAL;
 
 		}
 		
 <STRING_STATE>[^\n\\"]* {
 			str += yytext;
-			printf("catching strings....\n");
+			inStr += yytext;
 		}
 		
 <STRING_STATE>[\n] {
-			fprintf(logout,"Error at line no %d: Unfinished string \"%s\n\n",begin_string_line, str.c_str());
+			fprintf(logout,"\nError at line no %d: Unfinished string \"%s\n",begin_string_line, str.c_str());
 			line_count++;
 			errors++;
 			BEGIN INITIAL;
 		}
 		
 <STRING_STATE>[\\]	{
+			inStr += "\\";
 			BEGIN STRING_STATE_2;
 		}
 		
 		
 <STRING_STATE_2>{WHITESPACE}*{NEWLINE}	{
 			line_count++;
+			inStr += "\n";
 			BEGIN STRING_STATE;
 
 		}
 		
 <STRING_STATE>[\\]{METACHARS} {
-			printf("catching meta characters in string....\n");
+			printf("Got a meta char in string.............\n\n");
+			char b = yytext[1];
+			if(b=='n') {
+				str+= "\n"; inStr += "\\n"; }
+			if(b=='t') {
+				str+= "\t"; inStr += "\\t"; }
+			if(b=='a') {
+				str+= "\a"; inStr += "\\a"; }
+			if(b=='f') {
+				str+= "\f"; inStr += "\\f"; }
+			if(b=='r') {
+				str+= "\r"; inStr += "\\r"; }
+			if(b=='b') {
+				str+= "\b"; inStr += "\\b"; }
+			if(b=='v') {
+				str+= "\v"; inStr += "\\v"; }
+			if(b=='\\') {
+				str+="\\"; inStr += "\\\\"; }
+			if(b=='\'') {
+				str+= "'"; inStr += "\\'"; }
+			if(b=='\0') {
+				str+= "\0"; inStr += "\\0"; }
+			if(b=='\"') {
+				str+= "\""; inStr += "\\\""; }
 			
-			char b = yytext[0];
-			if(b=='n')
-				str+= "\n";
-			if(b=='t')
-				str+= "\t";
-			if(b=='a')
-				str+= "\a";
-			if(b=='f')
-				str+= "\f";
-			if(b=='r')
-				str+= "\r";
-			if(b=='b')
-				str+= "\b";
-			if(b=='v')
-				str+= "\v";
-			if(b=='\\')
-				str+="\\";
-			if(b=='\'')
-				str+= "'";
-			if(b=='\0')
-				str+= "\0";
-			if(b=='\"')
-				str+= "\"";
-			
-
+			//fprintf(logout, "...............now string is %s ...............\n\n\n\n", str.c_str());
 		}
 		
 <STRING_STATE>[\\]. {
+			printf("Executing other character after slash...%c\n", yytext[1]);
 			str+= yytext[1];
+			inStr+= "\\";
+			inStr+= yytext[1];
 			
 		}
 		
@@ -803,7 +819,7 @@ MULTILINECOMMENT [/][\*]
 		}
 		
 <SINGLE_LINE_COMMENT>{NEWLINE}|[\\][^\n]* {
-			fprintf(logout, "Line no %d: Token <COMMENT> Lexeme %s found\n\n",begin_comment_line, comment.c_str());
+			fprintf(logout, "\nLine no %d: Token <COMMENT> Lexeme %s found\n",begin_comment_line, comment.c_str());
 			line_count++;
 			BEGIN INITIAL;
 
@@ -827,7 +843,7 @@ MULTILINECOMMENT [/][\*]
 		
 <MULTI_LINE_COMMENT>[\*][/]	{
 			comment += "*/";
-			fprintf(logout, "Line no %d: Token <COMMENT> Lexeme %s found\n\n",begin_comment_line, comment.c_str());
+			fprintf(logout, "\nLine no %d: Token <COMMENT> Lexeme %s found\n",begin_comment_line, comment.c_str());
 			BEGIN INITIAL;
 		}
 		
@@ -837,7 +853,7 @@ MULTILINECOMMENT [/][\*]
 		}
 		
 <MULTI_LINE_COMMENT><<EOF>> {
-			fprintf(logout,"Line no %d: Unfinished comment %s\n\n",begin_comment_line, comment.c_str());
+			fprintf(logout,"\nLine no %d: Unfinished comment %s\n",begin_comment_line, comment.c_str());
 			errors++;
 			BEGIN INITIAL;
 		}
@@ -855,7 +871,17 @@ MULTILINECOMMENT [/][\*]
 			
 {ANYTHING}	{
 		
-			fprintf(logout,"Line no %d: Unrecognized character %s found\n\n",line_count,yytext);
+			fprintf(logout,"\nLine no %d: Unrecognized character %s found\n",line_count,yytext);
+		}
+		
+<<EOF>>		{
+			line_count--;
+			st.printAllScopeTable();
+			fprintf(logout, "\nTotal lines: %d\n",line_count);
+			fprintf(logout, "Total errors: %d\n",errors);
+			
+			return 0;
+
 		}
 
 %%
