@@ -810,7 +810,6 @@ MULTILINECOMMENT [/][\*]
 <STRING_STATE_2>{ANYTHING} {
 			
 			str+= yytext[0];
-			inStr+= "\\";
 			inStr+= yytext[0];
 			BEGIN STRING_STATE;
 			
