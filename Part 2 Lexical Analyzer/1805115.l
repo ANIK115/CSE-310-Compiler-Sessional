@@ -749,19 +749,22 @@ MULTILINECOMMENT [/][\*]
 
 		}
 		
-<STRING_STATE>[^\n\\"]* {
+		
+<STRING_STATE>[^"\n\\]* {
+			//fprintf(logout, "At this time: %s\n",yytext);
 			str += yytext;
 			inStr += yytext;
 		}
 		
 <STRING_STATE>[\n] {
-			fprintf(logout,"\nError at line no %d: Unfinished string \"%s\n",begin_string_line, str.c_str());
+			fprintf(logout,"\nError at line no %d: Unterminated string %s\n",begin_string_line, inStr.c_str());
 			line_count++;
 			errors++;
 			BEGIN INITIAL;
 		}
 		
 <STRING_STATE>[\\]	{
+			//fprintf(logout, "Going to String state 2...........\n\n\n\n");
 			inStr += "\\";
 			BEGIN STRING_STATE_2;
 		}
@@ -770,12 +773,13 @@ MULTILINECOMMENT [/][\*]
 <STRING_STATE_2>{WHITESPACE}*{NEWLINE}	{
 			line_count++;
 			inStr += "\n";
+			//fprintf(logout,"\n\nin string state 2!......\n\n");
 			BEGIN STRING_STATE;
 
 		}
 		
 <STRING_STATE>[\\]{METACHARS} {
-			printf("Got a meta char in string.............\n\n");
+			//printf("Got a meta char in string.............\n\n");
 			char b = yytext[1];
 			if(b=='n') {
 				str+= "\n"; inStr += "\\n"; }
@@ -803,11 +807,12 @@ MULTILINECOMMENT [/][\*]
 			//fprintf(logout, "...............now string is %s ...............\n\n\n\n", str.c_str());
 		}
 		
-<STRING_STATE>[\\]. {
-			printf("Executing other character after slash...%c\n", yytext[1]);
-			str+= yytext[1];
+<STRING_STATE_2>{ANYTHING} {
+			
+			str+= yytext[0];
 			inStr+= "\\";
-			inStr+= yytext[1];
+			inStr+= yytext[0];
+			BEGIN STRING_STATE;
 			
 		}
 		
@@ -818,7 +823,7 @@ MULTILINECOMMENT [/][\*]
 
 		}
 		
-<SINGLE_LINE_COMMENT>{NEWLINE}|[\\][^\n]* {
+<SINGLE_LINE_COMMENT>{NEWLINE} {
 			fprintf(logout, "\nLine no %d: Token <COMMENT> Lexeme %s found\n",begin_comment_line, comment.c_str());
 			line_count++;
 			BEGIN INITIAL;
@@ -827,10 +832,11 @@ MULTILINECOMMENT [/][\*]
 		
 <SINGLE_LINE_COMMENT>[\\]{NEWLINE}	{
 			line_count++;
+			comment += "\\\n";
 
 		}
 		
-<SINGLE_LINE_COMMENT>[^\n]* {
+<SINGLE_LINE_COMMENT>[^\\\n]* {
 			comment += yytext;
 
 		}
@@ -853,7 +859,7 @@ MULTILINECOMMENT [/][\*]
 		}
 		
 <MULTI_LINE_COMMENT><<EOF>> {
-			fprintf(logout,"\nLine no %d: Unfinished comment %s\n",begin_comment_line, comment.c_str());
+			fprintf(logout,"\nLine no %d: Unterminated comment %s\n",begin_comment_line, comment.c_str());
 			errors++;
 			BEGIN INITIAL;
 		}
@@ -871,7 +877,8 @@ MULTILINECOMMENT [/][\*]
 			
 {ANYTHING}	{
 		
-			fprintf(logout,"\nLine no %d: Unrecognized character %s found\n",line_count,yytext);
+			fprintf(logout,"\nError at line no %d: Unrecognized character %s found\n",line_count,yytext);
+			errors++;
 		}
 		
 <<EOF>>		{
@@ -899,8 +906,8 @@ int main(int argc,char *argv[]){
 		return 0;
 	}
 	
-	logout= fopen("log.txt","w");
-	tokenout= fopen("token.txt","w");
+	logout= fopen("log5.txt","w");
+	tokenout= fopen("token5.txt","w");
 
 	yyin= fin;
 	yylex();
