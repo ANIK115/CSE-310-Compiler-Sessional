@@ -528,8 +528,7 @@ MULTILINECOMMENT [/][\*]
 			fprintf(logout,"\nLine no %d: TOKEN <INCOP> Lexeme %s found\n",line_count,yytext);
 		}
 		
-"<"|"<="|">"|">="|"=="|"!="
-		{
+"<"|"<="|">"|">="|"=="|"!="  {
 		
 			fprintf(tokenout,"<RELOP,%s> ",yytext);
 			fprintf(logout,"\nLine no %d: TOKEN <RELOP> Lexeme %s found\n",line_count,yytext);
@@ -575,7 +574,7 @@ MULTILINECOMMENT [/][\*]
 		
 "}"		{
 		
-			fprintf(tokenout,"<MULOP,%s> ",yytext);
+			fprintf(tokenout,"<RCURL,%s> ",yytext);
 			fprintf(logout,"\nLine no %d: TOKEN <MULOP> Lexeme %s found\n",line_count,yytext);
 			st.exitScope();
 		}
