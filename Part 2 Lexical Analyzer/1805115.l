@@ -8,10 +8,9 @@
 %{
 #include<stdio.h>
 #include<stdlib.h>
+#include "1805115.cpp"
 #include<bits/stdc++.h>
 using namespace std;
-
-int no_of_buckets = 7;
 
 int line_count=1;
 int errors = 0;
@@ -24,380 +23,6 @@ string comment = "";
 FILE *logout;
 FILE *tokenout;
 
-
-class SymbolInfo
-{
-    string name;
-    string type;
-    SymbolInfo *next;
-
-public:
-
-    SymbolInfo()
-    {
-        next= NULL;
-    }
-
-    SymbolInfo(string name, string type)
-    {
-        this->name = name;
-        this->type = type;
-        next = NULL;
-    }
-
-    string getName()
-    {
-        return this->name;
-    }
-    string getType()
-    {
-        return this->type;
-    }
-    SymbolInfo* getNext()
-    {
-        return next;
-    }
-    void setNext(string symName, string symType)
-    {
-        next = new SymbolInfo(symName, symType);
-    }
-    void setNext(SymbolInfo* s)
-    {
-        next = s;
-    }
-    void setName(string name)
-    {
-        this->name = name;
-    }
-    void setType(string type)
-    {
-        this->type = type;
-    }
-    ~SymbolInfo()
-    {
-        delete next;
-    }
-};
-
-
-class ScopeTable //hash table
-{
-public:
-
-    SymbolInfo **syfo; //pointer for the hash table
-    ScopeTable *parentScope;
-    int deletedId = 0;
-    string scopeId= "";
-
-    ScopeTable(int n)
-    {
-        syfo = new SymbolInfo*[n];
-        for(int i=0; i<n; i++)
-        {
-            syfo[i] = NULL;
-        }
-        parentScope = NULL;
-    }
-
-    string giveUniqueId()
-    {
-        if(parentScope != NULL)
-        {
-            scopeId += parentScope->scopeId+".";
-        }
-        scopeId += to_string((parentScope->deletedId+1));
-        return scopeId;
-    }
-
-    uint32_t hashing(string name)
-    {
-        uint32_t hashVal = 0;
-        int c;
-        for(int i=0; i<name.size(); i++)
-        {
-            c = name[i];
-            hashVal = c + (hashVal << 6) + (hashVal << 16) - hashVal;
-        }
-        return (hashVal%no_of_buckets);
-    }
-
-    SymbolInfo* lookUp(string symbolName)
-    {
-        SymbolInfo **ptr = this->syfo;
-        int ind = hashing(symbolName);
-        int auxInd = 0;
-        SymbolInfo *cur = ptr[ind];
-        while(cur!= NULL)
-        {
-            if(cur->getName() == symbolName)
-            {
-                cout << "Found in ScopeTable# " << scopeId << " at position " << ind << ", " << auxInd << endl;
-                return cur;
-            }
-            cur = cur->getNext();
-            auxInd++;
-        }
-        return cur;
-    }
-
-    bool insertIntoSymbolTable(string symbolName, string symbolType)
-    {
-        SymbolInfo **ptr = this->syfo;
-        int ind = hashing(symbolName);
-        int pos = 0;
-
-        SymbolInfo *cur = ptr[ind];
-        while(true)
-        {
-            if(cur == NULL)
-            {
-                ptr[ind] = new SymbolInfo(symbolName, symbolType);
-                cout << "Inserted in ScopeTable# " << scopeId << " at position " << ind << ", " << pos << endl;
-                return true;
-            }
-            if(cur->getName()== symbolName)
-            {
-                cout << "<" << symbolName << "," << symbolType << "> already exists in current ScopeTable" << endl;
-                return false;
-            }
-            if(cur->getNext() == NULL)
-            {
-                pos++;
-                cur->setNext(symbolName, symbolType);
-                cout << "Inserted in ScopeTable# " << scopeId << " at position " << ind << ", " << pos << endl;
-                return true;
-            }
-            cur = cur->getNext();
-            pos++;
-        }
-    }
-
-    bool deleteAnEntry(string symbol)
-    {
-        int location = hashing(symbol);
-        SymbolInfo **ptr = this->syfo;
-        SymbolInfo *cur = ptr[location];
-        int ind = 0;
-        if(cur == NULL)
-        {
-            cout << "Not found\n";
-            return false;
-        }
-        if(cur->getName()==symbol)
-        {
-            ptr[location] = cur->getNext();
-            delete cur;
-            cout << "Found in ScopeTable# "<< scopeId << " at position "<< location << ", " <<ind <<endl;
-            cout << "Deleted Entry " << location << ", " << ind << " from current ScopeTable" << endl;
-            return true;
-        }
-        SymbolInfo *prev = cur;
-        while(cur != NULL)
-        {
-            if(cur->getName()==symbol)
-            {
-                prev->setNext(cur->getNext());
-                delete cur;
-                cout << "Found in ScopeTable# "<< scopeId << " at position "<< location << ", " <<ind <<endl;
-                cout << "Deleted Entry " << location << ", " << ind << " from current ScopeTable" << endl;
-                return true;
-            }
-            prev = cur;
-            cur = cur->getNext();
-            ind++;
-        }
-        cout << "Not found!" << endl;
-        return false;
-    }
-
-    void print()
-    {
-        SymbolInfo **ptr = this->syfo;
-        for(int i=0; i<no_of_buckets; i++)
-        {
-            if(ptr == NULL)
-            {
-                cout << i << " -->" << endl;
-            }
-            else
-            {
-                SymbolInfo *auxPtr = *ptr;
-                cout << i << " --> ";
-                while(auxPtr != NULL)
-                {
-                    cout << "<" << auxPtr->getName() <<" : " << auxPtr->getType() << ">\t";
-                    auxPtr = auxPtr->getNext();
-                }
-                cout << endl;
-            }
-            ptr++;
-        }
-    }
-
-    void printInLogFile()
-    {
-        FILE *fptr = logout;
-        SymbolInfo **ptr = this->syfo;
-        bool flag = true;
-        for(int i=0; i<no_of_buckets; i++)
-        {
-            if(*ptr != NULL)
-            {
-            	if(flag)
-        	{
-        		fprintf(fptr, "\nScopeTable # %s\n", this->scopeId.c_str());
-        		flag = false;
-        	}
-        	
-                SymbolInfo *auxPtr = *ptr;
-                fprintf(fptr, "%d--> ",i);
-                while(auxPtr != NULL)
-                {
-                    fprintf(fptr, "<%s : %s> ", auxPtr->getName().c_str(), auxPtr->getType().c_str());
-                    auxPtr = auxPtr->getNext();
-                }
-                fprintf(fptr, "\n");
-            }
-            ptr++;
-        }
-    }
-
-    ~ScopeTable()
-    {
-        for(int i=0; i<no_of_buckets; i++)
-        {
-            delete syfo[i];
-        }
-        delete[] syfo;
-    }
-};
-
-
-class SymbolTable
-{
-public:
-
-    ScopeTable *currentScopeTable;
-
-    SymbolTable(int n)
-    {
-        currentScopeTable = new ScopeTable(n);
-        currentScopeTable->scopeId = "1";
-    }
-
-    void enterScope(int n)
-    {
-        if(this->currentScopeTable == NULL)
-        {
-            currentScopeTable = new ScopeTable(no_of_buckets);
-            currentScopeTable->scopeId = "1";
-            return;
-        }
-        ScopeTable *st = new ScopeTable(n);
-        st->parentScope = this->currentScopeTable;
-        this->currentScopeTable = st;
-        cout <<"New ScopeTable with id " << this->currentScopeTable->giveUniqueId() <<" created\n";
-    }
-
-    void exitScope()
-    {
-        if(this->currentScopeTable==NULL)
-        {
-            cout << "NO CURRENT SCOPE" << endl;
-            return;
-        }
-        ScopeTable *temp = this->currentScopeTable;
-        cout << "ScopeTable with id " << temp->scopeId << " removed" << endl;
-        this->currentScopeTable = this->currentScopeTable->parentScope;
-        if(this->currentScopeTable != NULL)
-        {
-            this->currentScopeTable->deletedId++;
-        }
-        delete temp;
-    }
-
-    bool insertInCurrentST(string name, string type)
-    {
-        if(this->currentScopeTable == NULL)
-        {
-            currentScopeTable = new ScopeTable(no_of_buckets);
-            currentScopeTable->scopeId = "1";
-        }
-        bool flag = this->currentScopeTable->insertIntoSymbolTable(name, type);
-        return flag;
-    }
-
-    bool removeFromCurrentST(string name)
-    {
-        if(this->currentScopeTable==NULL)
-        {
-            cout << "NO CURRENT SCOPE" << endl;
-            return false;
-        }
-        bool flag = this->currentScopeTable->deleteAnEntry(name);
-        return flag;
-    }
-
-    SymbolInfo* lookUp(string name)
-    {
-        if(this->currentScopeTable==NULL)
-        {
-            cout << "NO CURRENT SCOPE" << endl;
-            return NULL;
-        }
-        ScopeTable *ptr = currentScopeTable;
-        SymbolInfo *location = ptr->lookUp(name);
-        if(location != NULL)
-        {
-            return location;
-        }
-        while(ptr->parentScope != NULL)
-        {
-            ptr = ptr->parentScope;
-            location = ptr->lookUp(name);
-            if(location != NULL)
-            {
-                cout << "Found!!!!!!!!!!" << endl;
-                return location;
-            }
-        }
-        cout << "Not found " << endl;
-        return location;
-    }
-
-    void printCurrentScopeTable()
-    {
-        if(this->currentScopeTable==NULL)
-        {
-            cout << "NO CURRENT SCOPE" << endl;
-            return;
-        }
-        cout << "ScopeTable # " << this->currentScopeTable->scopeId << endl;
-        this->currentScopeTable->print();
-    }
-
-    void printAllScopeTable()
-    {
-        if(this->currentScopeTable==NULL)
-        {
-            cout << "NO CURRENT SCOPE" << endl;
-            return;
-        }
-        ScopeTable *ptr = this->currentScopeTable;
-        while(ptr!= NULL)
-        {
-            cout << "\nScopeTable # " << ptr->scopeId << endl;
-            ptr->print();
-            ptr->printInLogFile();
-            ptr = ptr->parentScope;
-        }
-        delete ptr;
-    }
-    ~SymbolTable()
-    {
-        delete currentScopeTable;
-    }
-};
 
 
 SymbolTable st(no_of_buckets);
@@ -528,7 +153,7 @@ MULTILINECOMMENT [/][\*]
 			fprintf(logout,"\nLine no %d: TOKEN <INCOP> Lexeme %s found\n",line_count,yytext);
 		}
 		
-"<"|"<="|">"|">="|"=="|"!="  {
+"<"|"<="|">"|">="|"=="|"!="	{
 		
 			fprintf(tokenout,"<RELOP,%s> ",yytext);
 			fprintf(logout,"\nLine no %d: TOKEN <RELOP> Lexeme %s found\n",line_count,yytext);
@@ -574,8 +199,8 @@ MULTILINECOMMENT [/][\*]
 		
 "}"		{
 		
-			fprintf(tokenout,"<RCURL,%s> ",yytext);
-			fprintf(logout,"\nLine no %d: TOKEN <MULOP> Lexeme %s found\n",line_count,yytext);
+			fprintf(tokenout,"<MULOP,%s> ",yytext);
+			fprintf(logout,"\nLine no %d: TOKEN <RCURL> Lexeme %s found\n",line_count,yytext);
 			st.exitScope();
 		}
 		
@@ -608,7 +233,7 @@ MULTILINECOMMENT [/][\*]
 			fprintf(logout,"\nLine no %d: TOKEN <CONST_INT> Lexeme %s found\n",line_count,yytext);
 			//insert in symbol table and print symbol table content(only non empty buckets)
 			bool flag = st.insertInCurrentST(yytext, "CONST_INT");
-			if(flag) st.printAllScopeTable();
+			if(flag) st.printAllScopeTable(logout);
 			else fprintf(logout, "\n%s already exists in current ScopeTable\n", yytext);
 				
 				
@@ -620,7 +245,7 @@ MULTILINECOMMENT [/][\*]
 			fprintf(logout,"\nLine no %d: TOKEN <CONST_FLOAT> Lexeme %s found\n",line_count,yytext);
 			//insert in symbol table and print symbol table content(only non empty buckets)
 			bool flag = st.insertInCurrentST(yytext, "CONST_FLOAT");
-			if(flag) st.printAllScopeTable();
+			if(flag) st.printAllScopeTable(logout);
 			else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", yytext);
 				
 		}
@@ -649,7 +274,7 @@ MULTILINECOMMENT [/][\*]
 			fprintf(logout,"\nLine no %d: TOKEN <ID> Lexeme %s found\n",line_count,yytext);
 			//insert in symbol table and print symbol table content(only non empty buckets)
 			bool flag = st.insertInCurrentST(yytext, "ID");
-			if(flag) st.printAllScopeTable();
+			if(flag) st.printAllScopeTable(logout);
 			else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", yytext);
 
 		}
@@ -660,51 +285,53 @@ MULTILINECOMMENT [/][\*]
 		}
 		
 {IC}[\\]{ANYTHING}{IC} {
-			//printf("catching metachars in character literals.................\n\n");
-			char a = yytext[1];
+			//fprintf(logout, "catching metachars in character literals %s.................\n\n", yytext);
+			//char a = yytext[0];
 			char b = yytext[2];
+			//char c = yytext[2];
+			//fprintf(logout,"0: %c, 1: %c, 2: %c\n\n",a,b,c);
 			string name;
-			string tokenName= "";
+			char tokenName;
 			if(b=='n') {
-				name = "'\\n'"; tokenName += "\n"; }
-			if(b=='t') {
-				name = "'\\t'"; tokenName += "\t"; }
+				name = "'\\n'"; tokenName = '\n'; }
+			else if(b=='t') {
+				name = "'\\t'"; tokenName = '\t'; }
 			else if(b=='a') {
-				name = "'\\a'"; tokenName += "\a"; }
+				name = "'\\a'"; tokenName = '\a'; }
 			else if(b=='f') {
-				name = "'\\f'"; tokenName += "\f"; }
+				name = "'\\f'"; tokenName = '\f'; }
 			else if(b=='r') {
-				name = "'\\r'"; tokenName += "\r"; }
+				name = "'\\r'"; tokenName = '\r'; }
 			else if(b=='b') {
-				name = "'\\b'"; tokenName += "\b"; }
+				name = "'\\b'"; tokenName = '\b'; }
 			else if(b=='v') {
-				name = "'\\v'"; tokenName += "\v"; }
+				name = "'\\v'"; tokenName = '\v'; }
 			else if(b=='\\') {
-				name ="'\\\\'"; tokenName += "\\"; }
+				name ="'\\\\'"; tokenName = '\\'; }
 			else if(b=='\'') {
-				name = "'\''"; tokenName += "'"; }
+				name = "'\''"; tokenName = '\''; }
 			else if(b=='\0') {
-				name = "'\\0'"; tokenName += "\0"; }
+				name = "'\\0'"; tokenName = '\0'; }
 			else
 			{
 				name = "'\\";
 				name += b;
 				name += "'";
-				tokenName = "";
-				tokenName += b;
+				tokenName = b;
 			}
 			
-			fprintf(tokenout, "<CONST_CHAR,%s> ", tokenName.c_str());
-			fprintf(logout, "\nLine no %d: TOKEN <CONST_CHAR> Lexeme %s found --> <CHAR_CONST,%s >\n",line_count,name.c_str(), tokenName.c_str());
+			fprintf(tokenout, "<CONST_CHAR,%c> ", tokenName);
+			fprintf(logout, "\nLine no %d: TOKEN <CONST_CHAR> Lexeme %s found -->  <CHAR_CONST,%c > \n",line_count,name.c_str(),tokenName);
 			
 			bool flag = st.insertInCurrentST(name, "CONST_CHAR");
-			if(flag) st.printAllScopeTable();
+			if(flag) st.printAllScopeTable(logout);
 			else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", name.c_str());
 
 		}
 
 		
-{IC}[^\\]{IC}	{
+{IC}[^\\\n]{IC}	{
+			//fprintf(logout,"executing line 709-----\n");
 			char cl = yytext[1];
 			fprintf(tokenout,"<CONST_CHAR,%c> ",cl);
 			string name = "'";
@@ -713,20 +340,20 @@ MULTILINECOMMENT [/][\*]
 			fprintf(logout, "\nLine no %d: TOKEN <CONST_CHAR> Lexeme %s found --> <CHAR_CONST,%c >\n",line_count,name.c_str(),cl);
 			//insert in symbol table and print symbol table content(only non empty buckets)
 			bool flag = st.insertInCurrentST(name, "CONST_CHAR");
-			if(flag) st.printAllScopeTable();
+			if(flag) st.printAllScopeTable(logout);
 			else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", name.c_str());
 
 		}
 		
 		
 {IC}[^'\n]*|{IC}[\\]{IC}	{
-			
+			//fprintf(logout,"executing line 725-----\n");
 			fprintf(logout,"\nError at line no %d: Unterminated character %s\n",line_count,yytext);
 			errors++;
 			}
 			
 {IC}{ANYTHING}*{IC}		{
-			
+			//fprintf(logout,"executing line 731-----\n");
 			fprintf(logout,"\nError at line no %d: Multi character constant error %s\n",line_count,yytext);
 			errors++;
 			}
@@ -880,8 +507,7 @@ MULTILINECOMMENT [/][\*]
 		}
 		
 <<EOF>>		{
-			line_count--;
-			st.printAllScopeTable();
+			st.printAllScopeTable(logout);
 			fprintf(logout, "\nTotal lines: %d\n",line_count);
 			fprintf(logout, "Total errors: %d\n",errors);
 			
@@ -904,8 +530,8 @@ int main(int argc,char *argv[]){
 		return 0;
 	}
 	
-	logout= fopen("log5.txt","w");
-	tokenout= fopen("token5.txt","w");
+	logout= fopen("log2.txt","w");
+	tokenout= fopen("token2.txt","w");
 
 	yyin= fin;
 	yylex();
