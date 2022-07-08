@@ -14,7 +14,7 @@ public:
     bool isArray = false;
     int arraySize = 0;
     vector<string> typeSpecifiers;
-    vector<string> value;
+    vector<string> argumentNames;
 };
 
 
@@ -71,6 +71,8 @@ public:
     ~SymbolInfo()
     {
         delete next;
+        if(ai !=0)
+            delete ai;
     }
 };
 

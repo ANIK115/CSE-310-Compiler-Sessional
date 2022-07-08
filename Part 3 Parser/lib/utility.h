@@ -3,6 +3,7 @@ using namespace std;
 
 void writeMatchedRuleInLogFile(FILE *logout, int lineCount, string text)
     {
+        //cout << "I was called :-)\n\n";
         fprintf(logout, "Line no: %d %s\n\n",lineCount, text.c_str());
     }
 
