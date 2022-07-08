@@ -559,8 +559,23 @@ declaration_list : declaration_list COMMA ID	{
 				var_info.push_back(v);
 		   }
  		  
-statements : statement
-	   | statements statement
+statements : statement	{
+
+	string type = "statements";
+	string name = $1->getName();
+	$$ = new SymbolInfo(name, type);
+	string rule = "statements : statement";
+	writeMatchedRuleInLogFile(logout, line_count, rule);
+	writeMatchedSymbolInLogFile(logout, name);
+}
+	| statements statement	{
+		string type = "statements";
+		string name = $1->getName()+" "+$2->getName();
+		$$ = new SymbolInfo(name, type);
+		writeMatchedRuleInLogFile(logout, line_count, rule);
+		writeMatchedSymbolInLogFile(logout, name);
+
+	   }
 	   ;
 	   
 statement : var_declaration	{
@@ -664,12 +679,16 @@ expression_statement : SEMICOLON	{
 variable : ID	{
 
 	//Will complete this later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 	string type = "variable";
 	string name = $1->getName();
 	$$ = new SymbolInfo(name, type);
 	string rule = "variable : ID";
+	cout << "Entered this rule:- " << rule << endl;
 	writeMatchedRuleInLogFile(logout, line_count, rule);
 	writeMatchedSymbolInLogFile(logout, name);
+
+	$$->ai = new AdditionalInfo;
 
 	SymbolInfo *symbolFound = table->lookUp($1->getName());
 	if(symbolFound == NULL)
@@ -677,13 +696,115 @@ variable : ID	{
 		errors++;
 		string msg = "Undeclared variable "+$1->getName();
 		writeError(logout, errorFile, line_count, msg);
+		$$->ai->returnType = "NONE";	//to keep the code running
+	}else
+	{
+		if(symbolFound->ai->isFunction == true)
+		{
+			errors++;
+			string msg = "Variable name conflicts with function name";
+			writeError(logout, errorFile, line_count, msg);
+
+		}else if(symbolFound->ai->isArray == true)
+		{
+			errros++;
+			string msg = "Variable "+$1->getName()+" is an array";
+			writeError(logout, errorFile, line_count, msg);
+		}
+		$$->ai->returnType = symbolFound->ai->returnType;
 	}
 }		
-	 | ID LTHIRD expression RTHIRD 
+	 | ID LTHIRD expression RTHIRD	{
+
+		 string type = "variable";
+		 string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName();
+		 $$ = new SymbolInfo(name, type);
+		 string rule = "variable : ID LTHIRD expression RTHIRD";
+		 writeMatchedRuleInLogFile(logout, line_count, rule);
+		 writeMatchedSymbolInLogFile(logout, name);
+
+		 $$->ai = new AdditionalInfo;
+
+		 SymbolInfo *symbolFound = table->lookUp($1->getName());
+		 if(symbolFound != NULL)
+		 {
+			 if(symbolFound->ai->isFunction == true)
+			 {
+				 errors++;
+				 string msg = "Variable name conflicts with function name";
+				 writeError(logout, errorFile, line_count, msg);
+			 }else if(symbolFound->ai->isArray == false)
+			 {
+				 errors++;
+				 string msg "Variable "+$1->getName()+" is not an array";
+				 writeError(logout, errorFile, line_count, msg);
+			 }
+			 $$->ai->returnType = symbolFound->ai->returnType;
+		 }else 
+		 {
+			 errors++;
+			 string msg = "Undeclared variable "+$1->getName();
+			 writeError(logout, errorFile, line_count, msg);
+			 $$->ai->returnType = "NONE"; //to keep code running 
+		 }
+
+		 if($$->ai->returnType != "int")
+		 {
+			 errors++;
+			 string msg = "index number should be integer for array "+$1->getName();
+			 writeError(logout, errorFile, line_count, msg);
+		 }
+	 }
 	 ;
 	 
- expression : logic_expression	
-	   | variable ASSIGNOP logic_expression 	
+ expression : logic_expression	{
+
+	 $$ = $1;
+	 string rule = "expression : logic_expression";
+	 writeMatchedRuleInLogFile(logout, line_count, rule);
+	 writeMatchedSymbolInLogFile(logout, $1->getName());
+ }
+	   | variable ASSIGNOP logic_expression 	{
+
+		    string type = "expression";
+		    string name = $1->getName() + "" + $2->getName()+""+$3->getName();
+		    $$ = new SymbolInfo(name, type);
+		    string rule = "expression : variable ASSIGNOP logic_expression";
+		    writeMatchedRuleInLogFile(logout, line_count, rule);
+	 	    writeMatchedSymbolInLogFile(logout, $1->getName());
+
+			$$->ai = new AdditionalInfo;
+		    SymbolInfo *left = $1;	//left refers to variable 
+		    SymbolInfo *right = $3;	//right refers to logic_expression
+		    if(left->ai->returnType == right->ai->returnType)
+		    {
+			    $$->ai->returnType = left->ai->returnType; 
+		   	}else
+			{
+				if(left->ai->returnType == "float" && right->ai->returnType == "int")
+				{
+					warning_count++;
+					string msg = "Auto type conversion from float to int for logic_expression "+$3->getName();
+					writeWarning(logout, errorFile, line_count, msg);
+					$$->ai->returnType = "float";
+				}else if(left->ai->returnType == "int" && right->ai->returnType == "float")
+				{
+					errros++;
+					string msg = "Type mismatch of variable "+$1->getName();
+					writeError(logout, errorFile, line_count, msg);
+					$$->ai->returnType = left->ai->returnType;
+				}else
+				{
+					if(right->ai->returnType == "void")
+					{
+						errors++;
+						string msg = "void function cannot be used in assignment operation";
+						writeError(logout, errorFile, line_count, msg);
+					}
+					$$->ai->returnType = left->ai->returnType;
+				}	   
+			}
+	   }
 	   ;
 			
 logic_expression : rel_expression 	

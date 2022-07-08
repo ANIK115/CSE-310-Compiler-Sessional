@@ -18,3 +18,9 @@ void writeError(FILE *logout, FILE *errorFile, int line_count, string errorMsg)
 	fprintf(errorFile, "Error at line %d: %s\n\n",line_count, errorMsg.c_str());
 }
 
+
+void writeWarning(FILE *logout, FILE *errorFile, int line_count, string errorMsg)
+{
+    fprintf(logout, "Warning at line %d: %s\n\n",line_count, errorMsg.c_str());
+	fprintf(errorFile, "Warning at line %d: %s\n\n",line_count, errorMsg.c_str());
+}
