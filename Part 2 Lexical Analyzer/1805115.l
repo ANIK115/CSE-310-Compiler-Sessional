@@ -530,8 +530,8 @@ int main(int argc,char *argv[]){
 		return 0;
 	}
 	
-	logout= fopen("log2.txt","w");
-	tokenout= fopen("token2.txt","w");
+	logout= fopen("1805115_log.txt","w");
+	tokenout= fopen("1805115_token.txt","w");
 
 	yyin= fin;
 	yylex();
