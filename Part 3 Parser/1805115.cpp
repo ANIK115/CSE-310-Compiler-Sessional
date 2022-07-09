@@ -282,7 +282,7 @@ public:
         currentScopeTable->scopeId = "1";
     }
 
-    void enterScope(int n)
+    void enterScope()
     {
         if(this->currentScopeTable == NULL)
         {
@@ -290,7 +290,7 @@ public:
             currentScopeTable->scopeId = "1";
             return;
         }
-        ScopeTable *st = new ScopeTable(n);
+        ScopeTable *st = new ScopeTable(7);
         st->parentScope = this->currentScopeTable;
         this->currentScopeTable = st;
         cout <<"New ScopeTable with id " << this->currentScopeTable->giveUniqueId() <<" created\n";

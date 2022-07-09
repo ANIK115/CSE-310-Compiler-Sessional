@@ -17,6 +17,8 @@ FILE *input;
 FILE *logout;
 FILE *errorFile;
 
+#define ERROR "error";
+
 
 //Necessary class
 class VariableInfo
@@ -51,9 +53,10 @@ class FunctionInfo
 	}
 };
 
-//vector<string> argumentList;
+vector<string> argumentList;
 vector<VariableInfo> var_info;
 vector<FunctionInfo> functionArguments;
+
 
 
 //this method is used to check the errors in function definition grammar 
@@ -107,6 +110,31 @@ void insertFunctionDefInTable(string funcName, string returnType, SymbolInfo *sy
 	symbolFound->ai->isFunction = true;
 	symbolFound->ai->isFunctionDefined = isDefined;
 	symbolFound->ai->returnType = returnType;
+}
+
+
+
+void routineWorkForLCURL()
+{
+	//Entering new scope 
+	table->enterScope();
+	//storing all the function argument variables in the new scope table
+	for(int i=0; i<functionArguments.size();i++)
+	{	
+		SymbolInfo *symbolFound = table->lookUp(functionArguments[i].arg_name);
+		if(symbolFound!= NULL)
+		{
+			errors++;
+			string msg = "Multiple argument with same name "+functionArguments[i].arg_name;
+			writeError(logout, errorFile, line_count, msg);
+		}else
+		{
+			table->insertInCurrentST(functionArguments[i].arg_name, functionArguments[i].typeSpecifier);
+			SymbolInfo *symbol = table->lookUp(functionArguments[i].arg_name);
+			symbol->ai = new AdditionalInfo;
+			symbol->ai->returnType = functionArguments[i].typeSpecifier;
+		}
+	}
 }
 
 extern FILE *yyin;
@@ -350,9 +378,6 @@ func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statem
 				{
 					table->removeFromCurrentST($2->getName());
 				}
-
-				
-
 			}
 			functionArguments.clear();
 
@@ -432,9 +457,29 @@ parameter_list  : parameter_list COMMA type_specifier ID	{
  		;
 
  		
-compound_statement : LCURL statements RCURL
- 		    | LCURL RCURL
- 		    ;
+compound_statement : LCURL	{
+	routineWorkForLCURL();
+
+} statements RCURL	{
+	string name = $1->getName()+"\n"+$3->getName()+"\n"+$4->getName()+"\n";
+	$$ = new SymbolInfo(name, "compound_statement");
+	writeMatchedRuleInLogFile(logout, line_count, "compound_statement : LCURL statements RCURL");
+	writeMatchedSymbolInLogFile(logout, name);
+	table->printAllScopeTable(logout);
+	table->exitScope();
+}
+ 	| LCURL	{
+		 routineWorkForLCURL();
+
+	} RCURL	{
+		string name = $1->getName()+"\n\n"+$3->getName()+"\n";
+		$$ = new SymbolInfo(name, "compound_statement");
+		writeMatchedRuleInLogFile(logout, line_count, "compound_statement : LCURL RCURL");
+		writeMatchedSymbolInLogFile(logout, name);
+		table->printAllScopeTable(logout);
+		table->exitScope();
+	 }
+ 	;
  		    
 var_declaration : type_specifier declaration_list SEMICOLON	{
 
@@ -572,7 +617,7 @@ statements : statement	{
 		string type = "statements";
 		string name = $1->getName()+" "+$2->getName();
 		$$ = new SymbolInfo(name, type);
-		writeMatchedRuleInLogFile(logout, line_count, rule);
+		writeMatchedRuleInLogFile(logout, line_count, "statements : statements statement");
 		writeMatchedSymbolInLogFile(logout, name);
 
 	   }
@@ -677,9 +722,6 @@ expression_statement : SEMICOLON	{
 	;
 	  
 variable : ID	{
-
-	//Will complete this later!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 	string type = "variable";
 	string name = $1->getName();
 	$$ = new SymbolInfo(name, type);
@@ -696,7 +738,7 @@ variable : ID	{
 		errors++;
 		string msg = "Undeclared variable "+$1->getName();
 		writeError(logout, errorFile, line_count, msg);
-		$$->ai->returnType = "NONE";	//to keep the code running
+		$$->ai->returnType = ERROR;	//to keep the code running
 	}else
 	{
 		if(symbolFound->ai->isFunction == true)
@@ -707,7 +749,7 @@ variable : ID	{
 
 		}else if(symbolFound->ai->isArray == true)
 		{
-			errros++;
+			errors++;
 			string msg = "Variable "+$1->getName()+" is an array";
 			writeError(logout, errorFile, line_count, msg);
 		}
@@ -736,7 +778,7 @@ variable : ID	{
 			 }else if(symbolFound->ai->isArray == false)
 			 {
 				 errors++;
-				 string msg "Variable "+$1->getName()+" is not an array";
+				 string msg = "Variable "+$1->getName()+" is not an array";
 				 writeError(logout, errorFile, line_count, msg);
 			 }
 			 $$->ai->returnType = symbolFound->ai->returnType;
@@ -745,7 +787,7 @@ variable : ID	{
 			 errors++;
 			 string msg = "Undeclared variable "+$1->getName();
 			 writeError(logout, errorFile, line_count, msg);
-			 $$->ai->returnType = "NONE"; //to keep code running 
+			 $$->ai->returnType = ERROR; //to keep code running 
 		 }
 
 		 if($$->ai->returnType != "int")
@@ -759,7 +801,7 @@ variable : ID	{
 	 
  expression : logic_expression	{
 
-	 $$ = $1;
+	 $$ = new SymbolInfo($1->getName(), "expression");
 	 string rule = "expression : logic_expression";
 	 writeMatchedRuleInLogFile(logout, line_count, rule);
 	 writeMatchedSymbolInLogFile(logout, $1->getName());
@@ -789,7 +831,7 @@ variable : ID	{
 					$$->ai->returnType = "float";
 				}else if(left->ai->returnType == "int" && right->ai->returnType == "float")
 				{
-					errros++;
+					errors++;
 					string msg = "Type mismatch of variable "+$1->getName();
 					writeError(logout, errorFile, line_count, msg);
 					$$->ai->returnType = left->ai->returnType;
@@ -798,7 +840,7 @@ variable : ID	{
 					if(right->ai->returnType == "void")
 					{
 						errors++;
-						string msg = "void function cannot be used in assignment operation";
+						string msg = "A void function cannot be called as part of an expression";
 						writeError(logout, errorFile, line_count, msg);
 					}
 					$$->ai->returnType = left->ai->returnType;
@@ -807,43 +849,301 @@ variable : ID	{
 	   }
 	   ;
 			
-logic_expression : rel_expression 	
-		 | rel_expression LOGICOP rel_expression 	
+logic_expression : rel_expression	{
+
+	$$ = new SymbolInfo($1->getName(), "logic_expression");
+	string rule = "logic_expression : rel_expression";
+	writeMatchedRuleInLogFile(logout, line_count, rule);
+	writeMatchedSymbolInLogFile(logout, $1->getName());
+
+	$$->ai = new AdditionalInfo;
+	$$->ai->returnType = $1->ai->returnType;
+
+}	
+	| rel_expression LOGICOP rel_expression	{
+
+		string name = $1->getName()+" "+$2->getName()+" "+$3->getName();
+		$$ = new SymbolInfo(name, "logic_expression");
+		string rule = "logic_expression : rel_expression LOGICOP rel_expression";
+		writeMatchedRuleInLogFile(logout, line_count, rule);
+		writeMatchedSymbolInLogFile(logout, name);
+
+		$$->ai = new AdditionalInfo;
+		if($1->ai->returnType != "int" || $3->ai->returnType != "int")
+		{
+			errors++;
+			string msg = "Both operands of "+$2->getName()+" should be of int type";
+			writeError(logout, errorFile, line_count, msg);
+			$$->ai->returnType = ERROR;
+		}else
+		{
+			$$->ai->returnType = "int";
+		}
+	} 	
 		 ;
 			
-rel_expression	: simple_expression 
-		| simple_expression RELOP simple_expression	
+rel_expression	: simple_expression	{
+
+	$$ = new SymbolInfo($1->getName(), "rel_expression");
+	string rule = "rel_expression : simple_expression";
+	writeMatchedRuleInLogFile(logout, line_count, rule);
+	writeMatchedSymbolInLogFile(logout, $1->getName());
+	$$->ai = new AdditionalInfo;
+	$$->ai->returnType = $1->ai->returnType;
+}
+		| simple_expression RELOP simple_expression	{
+			string name = $1->getName()+" "+$2->getName()+" "+$3->getName();
+			$$ = new SymbolInfo(name, "rel_expression");
+			string rule = "rel_expression : simple_expression RELOP simple_expression";
+			writeMatchedRuleInLogFile(logout, line_count, rule);
+			writeMatchedSymbolInLogFile(logout, name);
+			$$->ai = new AdditionalInfo;
+			$$->ai->returnType = "int";
+		}
 		;
 				
-simple_expression : term 
-		  | simple_expression ADDOP term 
-		  ;
-					
-term :	unary_expression
-     |  term MULOP unary_expression
-     ;
+simple_expression : term	{
+	$$ = new SymbolInfo($1->getName(), "simple_expression");
+	writeMatchedRuleInLogFile(logout, line_count, "simple_expression : term");
+	writeMatchedSymbolInLogFile(logout, $1->getName());
 
-unary_expression : ADDOP unary_expression  
-		 | NOT unary_expression 
-		 | factor 
-		 ;
-	
-factor	: variable 
-	| ID LPAREN argument_list RPAREN
-	| LPAREN expression RPAREN
-	| CONST_INT 
-	| CONST_FLOAT
-	| variable INCOP 
-	| variable DECOP
+	$$->ai = new AdditionalInfo;
+	$$->ai->returnType = $1->ai->returnType;
+} 
+	| simple_expression ADDOP term	{
+
+		string name = $1->getName()+""+$2->getName()+""+$3->getName();
+		$$ = new SymbolInfo(name, "simple_expression");
+		string rule = "simple_expression : simple_expression ADDOP term";
+		writeMatchedRuleInLogFile(logout, line_count, rule);
+		writeMatchedSymbolInLogFile(logout, name);
+
+		string retType = "int";
+		if($1->ai->returnType == "float" || $3->ai->returnType == "float")
+		{
+			warning_count++;
+			string msg = "Auto type conversion from int to float";
+			writeWarning(logout, errorFile, line_count, msg);
+			retType = "float";
+		}
+		$$->ai = new AdditionalInfo;
+		$$->ai->returnType = retType;
+
+	} 
+	;
+					
+term :	unary_expression	{
+	$$ = new SymbolInfo($1->getName(), "term");
+	writeMatchedRuleInLogFile(logout, line_count, "term : unary_expression");
+	writeMatchedSymbolInLogFile(logout, $1->getName());
+	$$->ai = new AdditionalInfo;
+	$$->ai->returnType = $1->ai->returnType;
+}
+    |  term MULOP unary_expression	{
+		string name = $1->getName()+""+$2->getName()+""+$3->getName();
+		$$ = new SymbolInfo(name, "term");
+		string rule = "term : term MULOP unary_expression";
+		writeMatchedRuleInLogFile(logout, line_count, rule);
+		writeMatchedSymbolInLogFile(logout, name);
+		string retType = "int";
+		if($1->ai->returnType == "float" ||  $3->ai->returnType == "float")
+		{
+			if($2->getName()=="%")
+			{
+				errors++;
+				string msg = "Non-integer operand on modulus operator";
+				writeError(logout, errorFile, line_count, msg);
+				retType = ERROR;
+			}else
+			{
+				warning_count++;
+				string msg = "Auto type conversion from float to int";
+				writeWarning(logout, errorFile, line_count, msg);
+				retType = "float";
+			}
+		}else if($1->ai->returnType == "int" && $3->ai->returnType=="int")
+		{
+			//All okay
+		}else
+		{
+			retType = ERROR;
+		}
+		$$->ai = new AdditionalInfo;
+		$$->ai->returnType = retType;
+	}
+    ;
+
+unary_expression : ADDOP unary_expression	{
+	string name = $1->getName()+""+$2->getName();
+	$$ = new SymbolInfo(name, "unary_expression");
+	writeMatchedRuleInLogFile(logout, line_count, "unary_expression : ADDOP unary_expression");
+	writeMatchedSymbolInLogFile(logout, name);
+	$$->ai= new AdditionalInfo;
+	$$->ai->returnType = $1->ai->returnType;
+}
+	| NOT unary_expression	{
+		string name = $1->getName()+""+$2->getName();
+		$$ = new SymbolInfo(name, "unary_expression");
+		writeMatchedRuleInLogFile(logout, line_count, "unary_expression : NOT unary_expression");
+		writeMatchedSymbolInLogFile(logout, name);
+		$$->ai= new AdditionalInfo;
+		$$->ai->returnType = $1->ai->returnType;
+	} 
+	| factor	{
+		$$ = new SymbolInfo($1->getName(), "unary_expression");
+		writeMatchedRuleInLogFile(logout, line_count, "unary_expression : factor");
+		writeMatchedSymbolInLogFile(logout, $1->getName());
+		$$->ai= new AdditionalInfo;
+		$$->ai->returnType = $1->ai->returnType;
+	} 
 	;
 	
-argument_list : arguments
-			  |
-			  ;
+factor	: variable	{
+	$$ = new SymbolInfo($1->getName(), "factor");
+	writeMatchedRuleInLogFile(logout, line_count, "factor : variable");
+	writeMatchedSymbolInLogFile(logout, $1->getName());
+	$$->ai= new AdditionalInfo;
+	$$->ai->returnType = $1->ai->returnType;
+} 
+	| ID LPAREN argument_list RPAREN	{
+		//this grammar is for a= fun(4,5);
+		//check if the function exists or not in the symbol table
+		//check return type of function: cannot be void
+		//check parameter list size and serial
+		//check if it is a function or a variable 
+
+		string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName();
+		$$ = new SymbolInfo(name, "factor");
+		writeMatchedRuleInLogFile(logout, line_count, "factor : ID LPAREN argument_list RPAREN");
+		writeMatchedSymbolInLogFile(logout, name);
+
+		string retType = "undeclared";
+		SymbolInfo *symbolFound = table->lookUp($1->getName());
+
+		if(symbolFound == NULL)
+		{
+			errors++;
+			string msg = "Undeclared function "+$1->getName();
+			writeError(logout, errorFile, line_count, msg);
+		}else
+		{
+			if(symbolFound->ai->isFunction==false)
+			{
+				errors++;
+				string msg = "Non function identifier "+$1->getName();
+				writeError(logout, errorFile, line_count, msg);
+			}else
+			{
+				retType = symbolFound->ai->returnType;
+				if(symbolFound->ai->returnType == "void")
+				{
+					errors++;
+					string msg = "Void function cannot be used as a factor";
+					writeError(logout, errorFile, line_count, msg);
+				}
+				if(symbolFound->ai->typeSpecifiers.size()!=argumentList.size())
+				{
+					errors++;
+					string msg = "Number of arguments does not match with function definition for function "+$1->getName();
+					writeError(logout, errorFile, line_count, msg);
+				}else
+				{
+					for(int i=0; i<argumentList.size(); i++)
+					{
+						if(argumentList[i] != symbolFound->ai->typeSpecifiers[i])
+						{
+							if((argumentList[i] == "float" && symbolFound->ai->typeSpecifiers[i] == "int") || (argumentList[i] == "int" && symbolFound->ai->typeSpecifiers[i] == "float"))
+							{
+								warning_count++;
+								string num = ""+(i+1);
+								string msg = "Auto type conversion from int to float in function " + $1->getName()+" for parameter no: "+num;
+								writeWarning(logout, errorFile, line_count, msg);
+							}else
+							{
+								errors++;
+								string num = ""+(i+1);
+								string msg = "Type mismatch for function "+$1->getName()+" for parameter no: "+num;
+								writeError(logout, errorFile, line_count, msg);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		$$->ai = new AdditionalInfo;
+		$$->ai->returnType = retType;
+		argumentList.clear();
+
+	}
+	| LPAREN expression RPAREN	{
+		string name = $1->getName()+""+$2->getName()+""+$3->getName();
+		$$ = new SymbolInfo(name, "factor");
+		writeMatchedRuleInLogFile(logout, line_count, "factor : LPAREN expression RPAREN");
+		writeMatchedSymbolInLogFile(logout, name);
+		$$->ai= new AdditionalInfo;
+		$$->ai->returnType = $1->ai->returnType;
+	}
+	| CONST_INT	{
+		$$ = new SymbolInfo($1->getName(), "factor");
+		writeMatchedRuleInLogFile(logout, line_count, "factor : CONST_INT");
+		writeMatchedSymbolInLogFile(logout, $1->getName());
+		$$->ai= new AdditionalInfo;
+		$$->ai->returnType = "int";
+	}
+	| CONST_FLOAT	{
+		$$ = new SymbolInfo($1->getName(), "factor");
+		writeMatchedRuleInLogFile(logout, line_count, "factor : CONST_FLOAT");
+		writeMatchedSymbolInLogFile(logout, $1->getName());
+		$$->ai= new AdditionalInfo;
+		$$->ai->returnType = "float";
+	}
+	| variable INCOP	{
+		string name = $1->getName()+""+$2->getName();
+		$$ = new SymbolInfo(name, "factor");
+		writeMatchedRuleInLogFile(logout, line_count, "factor : variable INCOP");
+		writeMatchedSymbolInLogFile(logout, name);
+		$$->ai= new AdditionalInfo;
+		$$->ai->returnType = $1->ai->returnType;
+	}
+	| variable DECOP	{
+		string name = $1->getName()+""+$2->getName();
+		$$ = new SymbolInfo(name, "factor");
+		writeMatchedRuleInLogFile(logout, line_count, "factor : variable DECCOP");
+		writeMatchedSymbolInLogFile(logout, name);
+		$$->ai= new AdditionalInfo;
+		$$->ai->returnType = $1->ai->returnType;
+	}
+	;
 	
-arguments : arguments COMMA logic_expression
-	      | logic_expression
-	      ;
+argument_list : arguments	{
+	$$ = new SymbolInfo($1->getName(), "argument_list");
+	writeMatchedRuleInLogFile(logout, line_count, "argument_list : arguments");
+	writeMatchedSymbolInLogFile(logout, $1->getName());
+}
+	|	{
+		$$ = new SymbolInfo("", "argument_list");
+		writeMatchedRuleInLogFile(logout, line_count, "argument_list : ");
+		writeMatchedSymbolInLogFile(logout, "");
+	}
+	;
+	
+arguments : arguments COMMA logic_expression	{
+
+	argumentList.push_back($3->ai->returnType);
+	string name = $1->getName()+""+$2->getName()+""+$3->getName();
+	$$ = new SymbolInfo(name, "arguments");
+	writeMatchedRuleInLogFile(logout, line_count, "arguments : arguments COMMA logic_expression");
+	writeMatchedSymbolInLogFile(logout, name);
+	
+}
+| logic_expression	{
+	argumentList.push_back($1->ai->returnType);
+	$$ = new SymbolInfo($1->getName(), "arguments");
+	writeMatchedRuleInLogFile(logout, line_count, "arguments : logic_expression");
+	writeMatchedSymbolInLogFile(logout, $1->getName());
+}
+;
  
 
 %%
