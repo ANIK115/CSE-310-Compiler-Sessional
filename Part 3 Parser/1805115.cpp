@@ -257,6 +257,7 @@ public:
             }
             ptr++;
         }
+        fprintf(fptr, "\n");
     }
 
     ~ScopeTable()
@@ -342,6 +343,16 @@ public:
             cout << "NO CURRENT SCOPE" << endl;
             return NULL;
         }
+        return this->currentScopeTable->lookUp(name);
+    }
+
+    SymbolInfo* lookUpInAllScope(string name)
+    {
+        if(this->currentScopeTable==NULL)
+        {
+            cout << "NO CURRENT SCOPE" << endl;
+            return NULL;
+        }
         ScopeTable *ptr = currentScopeTable;
         SymbolInfo *location = ptr->lookUp(name);
         if(location != NULL)
@@ -371,6 +382,7 @@ public:
         }
         cout << "ScopeTable # " << this->currentScopeTable->scopeId << endl;
         this->currentScopeTable->print();
+        printf("\n");
     }
 
     void printAllScopeTable(FILE *logout)

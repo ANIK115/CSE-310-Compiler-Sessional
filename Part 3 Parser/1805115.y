@@ -56,37 +56,36 @@ class FunctionInfo
 vector<string> argumentList;
 vector<VariableInfo> var_info;
 vector<FunctionInfo> functionArguments;
+string functionReturnType;
+string currentFunctionName;
 
 
 
 //this method is used to check the errors in function definition grammar 
 void errorCheckingForFunctionDefinition(SymbolInfo *symbolFound, string funcReturnType, string funcName)
 {
-    //ai null means it was a variable and ai not null and isFunction false means it was an array
+	//table->enterScope();
+    //ai null means it was a variable and ai not null and isFunction false means it was a variable
     if(symbolFound->ai == NULL || (symbolFound->ai != NULL && symbolFound->ai->isFunction == false))
     {
         errors++;
         writeError(logout, errorFile, line_count, "Variable name function name conflict");
 
-    }
-    else if(symbolFound->ai->isFunctionDefined == true)
+    }else if(symbolFound->ai->isFunctionDefined == true)
     {
         errors++;
         writeError(logout, errorFile, line_count, "Multiple definition exists for same function name");
-    }
-    else if(symbolFound->ai->returnType != funcReturnType)
+    }else if(symbolFound->ai->returnType != funcReturnType)
     {
         errors++;
         string msg = "Return type does not match with previously declared signature for function "+funcName;
         writeError(logout, errorFile, line_count, msg);
-    }
-    else if(symbolFound->ai->typeSpecifiers.size() != functionArguments.size())
+    }else if(symbolFound->ai->typeSpecifiers.size() != functionArguments.size())
     {
         errors++;
         string msg = "Total number of arguments mismatch in function "+funcName;
         writeError(logout, errorFile, line_count, msg);
-    }
-    else if(symbolFound->ai->typeSpecifiers.size() == functionArguments.size())
+    }else if(symbolFound->ai->typeSpecifiers.size() == functionArguments.size())
     {
         for(int i=0; i<functionArguments.size(); i++)
         {
@@ -98,6 +97,7 @@ void errorCheckingForFunctionDefinition(SymbolInfo *symbolFound, string funcRetu
 				break;
             }
         }
+		symbolFound->ai->isFunctionDefined = true;
     }
 }
 
@@ -106,6 +106,10 @@ void insertFunctionDefInTable(string funcName, string returnType, SymbolInfo *sy
 {
 	table->insertInCurrentST(funcName, "function");
 	symbolFound = table->lookUp(funcName);
+	if(symbolFound)
+	{
+		cout << funcName << " Function is stored-------------------------\n\n\n\n\n\n";
+	}
 	symbolFound->ai = new AdditionalInfo;
 	symbolFound->ai->isFunction = true;
 	symbolFound->ai->isFunctionDefined = isDefined;
@@ -191,14 +195,16 @@ void yyerror(const char *s)
 
 start : program
 	{
-		//write your code in this block in all the similar blocks below
+		$$ = new SymbolInfo($1->getName(), "start");
+		writeMatchedRuleInLogFile(logout, line_count, "start : program");
+		//writeMatchedSymbolInLogFile(logout,$1->getName());
 	}
 	;
 
 program : program unit	{
 	
 	string type = "program";
-	string name = $1->getName()+$2->getName();
+	string name = $1->getName()+"\n"+$2->getName();
 	$$ = new SymbolInfo(name, type);
 	string rule = "program : program unit";
 	writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -247,7 +253,7 @@ unit : var_declaration	{
 func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON	{
 
 	string type = "func_declaration";
-	string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+" "+$5->getName()+""+$6->getName();
+	string name = $1->getName()+" "+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName()+""+$6->getName();
 	$$ = new SymbolInfo(name, type);
 	string rule = "func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON";
 	writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -306,7 +312,7 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON	{
 		| type_specifier ID LPAREN RPAREN SEMICOLON	{
 
 			string type = "func_declaration";
-			string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+""+$5->getName();
+			string name = $1->getName()+" "+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName();
 			$$ = new SymbolInfo(name, type);
 			string rule = "func_declaration : type_specifier ID LPAREN RPAREN SEMICOLON";
 			writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -333,15 +339,12 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON	{
 		}
 		;
 		 
-func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement	{
-			string type = "func_definition";
-			string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+" "+$5->getName()+" "+$6->getName();
-			$$ = new SymbolInfo(name, type);
-			string rule = "func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement";
-			writeMatchedRuleInLogFile(logout, line_count, rule);
-			writeMatchedSymbolInLogFile(logout, name);
-
-			SymbolInfo *symbolFound = table->lookUp($2->getName());
+func_definition : type_specifier ID LPAREN parameter_list RPAREN 
+{
+			currentFunctionName = $2->getName();
+			functionReturnType = $1->getName();
+			cout << "I was here in func_definition------------------------\n\n\n";
+			SymbolInfo *symbolFound = table->lookUpInAllScope($2->getName());
 			if(symbolFound != NULL)
 			{
 				string funcName = $2->getName();
@@ -353,6 +356,7 @@ func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statem
 				bool flag = false;
 				table->insertInCurrentST($2->getName(), "function");
 				SymbolInfo *symbolFound = table->lookUp($2->getName());
+				//table->enterScope();
 				symbolFound->ai = new AdditionalInfo;
 				for(int i=0; i<functionArguments.size(); i++)
 				{
@@ -379,19 +383,23 @@ func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statem
 					table->removeFromCurrentST($2->getName());
 				}
 			}
-			functionArguments.clear();
+
+			
+
+}	compound_statement	 {
+		string type = "func_definition";
+		string name = $1->getName()+" "+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName()+""+$7->getName();
+		$$ = new SymbolInfo(name, type);
+		string rule = "func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statement";
+		writeMatchedRuleInLogFile(logout, line_count, rule);
+		writeMatchedSymbolInLogFile(logout, name);
+		functionArguments.clear();
 
 }
-		| type_specifier ID LPAREN RPAREN compound_statement	{
 
-			string type = "func_definition";
-			string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+" "+$5->getName();
-			$$ = new SymbolInfo(name, type);
-			string rule = "func_definition : type_specifier ID LPAREN RPAREN compound_statement";
-			writeMatchedRuleInLogFile(logout, line_count, rule);
-			writeMatchedSymbolInLogFile(logout, name);
+		| type_specifier ID LPAREN RPAREN 	{
 
-			SymbolInfo *symbolFound = table->lookUp($2->getName());
+			SymbolInfo *symbolFound = table->lookUpInAllScope($2->getName());
 			if(symbolFound != NULL)
 			{
 				string funcName = $2->getName();
@@ -399,11 +407,18 @@ func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statem
 				errorCheckingForFunctionDefinition(symbolFound, funcReturnType, funcName);
 			}else 
 			{
-				
+				//table->enterScope();
 				insertFunctionDefInTable($2->getName(), $1->getName(), symbolFound, true);
 			}
 
 			functionArguments.clear();
+		} compound_statement	{
+			string type = "func_definition";
+			string name = $1->getName()+" "+$2->getName()+""+$3->getName()+""+$4->getName()+""+$6->getName();
+			$$ = new SymbolInfo(name, type);
+			string rule = "func_definition : type_specifier ID LPAREN RPAREN compound_statement";
+			writeMatchedRuleInLogFile(logout, line_count, rule);
+			writeMatchedSymbolInLogFile(logout, name);
 		}
  		;				
 
@@ -411,9 +426,9 @@ func_definition : type_specifier ID LPAREN parameter_list RPAREN compound_statem
 parameter_list  : parameter_list COMMA type_specifier ID	{
 
 	string type = "parameter_list";
-	string name = $1->getName()+" "+$2->getName()+""+$3->getName()+" "+$4->getName();
+	string name = $1->getName()+""+$2->getName()+""+$3->getName()+" "+$4->getName();
 	$$ = new SymbolInfo(name, type);
-	string rule = "parameter_list  : parameter_list COMMA type_specifier ID";
+	string rule = "parameter_list : parameter_list COMMA type_specifier ID";
 	writeMatchedRuleInLogFile(logout, line_count, rule);
 	writeMatchedSymbolInLogFile(logout, name);
 
@@ -423,7 +438,7 @@ parameter_list  : parameter_list COMMA type_specifier ID	{
 		| parameter_list COMMA type_specifier	{
 
 			string type = "parameter_list";
-			string name = $1->getName()+" "+$2->getName()+""+$3->getName();
+			string name = $1->getName()+""+$2->getName()+""+$3->getName();
 			$$ = new SymbolInfo(name, type);
 			string rule = "parameter_list  : parameter_list COMMA type_specifier";
 			writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -442,6 +457,8 @@ parameter_list  : parameter_list COMMA type_specifier ID	{
 			 writeMatchedSymbolInLogFile(logout, name);
 			 FunctionInfo fi($1->getName(), $2->getName());
 			 functionArguments.push_back(fi);
+			 //added this line to debug function definition error : undeclared variable
+			//table->insertInCurrentST($2->getName(), $1->getName());
 		 }
 		| type_specifier	{
 
@@ -476,20 +493,18 @@ compound_statement : LCURL	{
 		$$ = new SymbolInfo(name, "compound_statement");
 		writeMatchedRuleInLogFile(logout, line_count, "compound_statement : LCURL RCURL");
 		writeMatchedSymbolInLogFile(logout, name);
-		table->printAllScopeTable(logout);
-		table->exitScope();
+		// table->printAllScopeTable(logout);
+		// table->exitScope();
 	 }
  	;
  		    
 var_declaration : type_specifier declaration_list SEMICOLON	{
 
 	string type = "var_declaration";
-	string name = $1->getName()+" "+$2->getName()+" "+$3->getName();
+	string name = $1->getName()+" "+$2->getName()+""+$3->getName();
 	$$ = new SymbolInfo(name, type);
 	string rule = "var_declaration : type_specifier declaration_list SEMICOLON";
-	writeMatchedRuleInLogFile(logout, line_count, rule);
-	writeMatchedSymbolInLogFile(logout, name);
-
+	
 
 	string varType = $1->getName();
 
@@ -509,8 +524,8 @@ var_declaration : type_specifier declaration_list SEMICOLON	{
 		if(symbolFound != NULL)
 		{
 			errors++;
-			fprintf(logout, "ERROR at line %d : %s name already exists\n\n",line_count, symbolName.c_str());
-			fprintf(errorFile, "ERROR at line %d : %s name already exists\n\n",line_count, symbolName.c_str());
+			string msg = "Multiple declaration of variable "+symbolName;
+			writeError(logout, errorFile, line_count, msg);
 			continue;
 		}
 
@@ -525,6 +540,9 @@ var_declaration : type_specifier declaration_list SEMICOLON	{
 		}
 	}
 
+	writeMatchedRuleInLogFile(logout, line_count, rule);
+	writeMatchedSymbolInLogFile(logout, name);
+
 	var_info.clear();
 
 }
@@ -532,7 +550,7 @@ var_declaration : type_specifier declaration_list SEMICOLON	{
 type_specifier	: 
 INT	{
 	string type = "type_specifier";
-	string name = $1->getName();
+	string name = $1->getName()+"";
 	$$ = new SymbolInfo(name, type);
 	string rule = "type_specifier : INT";
 	writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -540,7 +558,7 @@ INT	{
 }
 | FLOAT	{
 	string type = "type_specifier";
-	string name = $1->getName();
+	string name = $1->getName()+"";
 	$$ = new SymbolInfo(name, type);
 	string rule = "type_specifier : FLOAT";
 	writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -548,7 +566,7 @@ INT	{
 }
 | VOID	{
 	string type = "type_specifier";
-	string name = $1->getName();
+	string name = $1->getName()+"";
 	$$ = new SymbolInfo(name, type);
 	string rule = "type_specifier : VOID";
 	writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -570,20 +588,29 @@ declaration_list : declaration_list COMMA ID	{
  		  | declaration_list COMMA ID LTHIRD CONST_INT RTHIRD	{
 
 			    string type = "declaration_list";
-			    string name = $1->getName()+""+$2->getName()+""+$3->getName()+" "+$4->getName()+" "+$5->getName()+" "+$6->getName();
+			    string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName()+""+$6->getName();
 			    $$ = new SymbolInfo(name, type);
 			    string rule = "declaration_list : declaration_list COMMA ID LTHIRD CONST_INT RTHIRD";
-			    writeMatchedRuleInLogFile(logout, line_count, rule);
+				SymbolInfo *symbolFound = table->lookUp($3->getName());
+				if(symbolFound==NULL)
+				{
+					VariableInfo v($3->getName(), stoi($5->getName()));
+			    	var_info.push_back(v);
+				}else
+				{
+					errors++;
+					string msg = "Multiple declaration of "+$3->getName();
+					writeError(logout, errorFile, line_count, msg);
+				}
+				writeMatchedRuleInLogFile(logout, line_count, rule);
 			    writeMatchedSymbolInLogFile(logout, name);
-
-			    VariableInfo v($<symbol>3->getName(), stoi($<symbol>5->getName()));
-			    var_info.push_back(v);
+			    
 
 		   }
  		  | ID	{
 
 			   string type = "declaration_list";
-			   string name = $1->getName();
+			   string name = $1->getName()+"";
 			   $$ = new SymbolInfo(name, type);
 			   string rule = "declaration_list : ID";
 			   writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -594,7 +621,7 @@ declaration_list : declaration_list COMMA ID	{
 		   }
  		  | ID LTHIRD CONST_INT RTHIRD	{
 			   string type = "declaration_list";
-			   string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName();
+			   string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName();
 			   $$ = new SymbolInfo(name, type);
 			   string rule = "declaration_list : ID LTHIRD CONST_INT RTHIRD";
 			   writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -615,7 +642,7 @@ statements : statement	{
 }
 	| statements statement	{
 		string type = "statements";
-		string name = $1->getName()+" "+$2->getName();
+		string name = $1->getName()+"\n"+$2->getName();
 		$$ = new SymbolInfo(name, type);
 		writeMatchedRuleInLogFile(logout, line_count, "statements : statements statement");
 		writeMatchedSymbolInLogFile(logout, name);
@@ -654,7 +681,7 @@ statement : var_declaration	{
 	  | FOR LPAREN expression_statement expression_statement expression RPAREN statement	{
 
 		  string type = "statement";
-		  string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+" "+$5->getName()+" "+$6->getName()+" "+$7->getName();
+		  string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName()+""+$6->getName()+""+$7->getName();
 		  $$ = new SymbolInfo(name, type);
 		  string rule = "statement : FOR LPAREN expression_statement expression_statement expression RPAREN statement";
 		  writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -662,7 +689,7 @@ statement : var_declaration	{
 	  }
 	  | IF LPAREN expression RPAREN statement %prec NO_ELSE	{
 		  string type = "statement";
-		  string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+" "+$5->getName();
+		  string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName();
 		  $$ = new SymbolInfo(name, type);
 		  string rule = "statement : IF LPAREN expression RPAREN statement";
 		  writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -670,7 +697,7 @@ statement : var_declaration	{
 	  }
 	  | IF LPAREN expression RPAREN statement ELSE statement	{
 		  string type = "statement";
-		  string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+" "+$5->getName()+" "+$6->getName()+" "+$7->getName();
+		  string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName()+""+$6->getName()+""+$7->getName();
 		  $$ = new SymbolInfo(name, type);
 		  string rule = "statement : IF LPAREN expression RPAREN statement ELSE statement";
 		  writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -678,7 +705,7 @@ statement : var_declaration	{
 	  }
 	  | WHILE LPAREN expression RPAREN statement	{
 		  string type = "statement";
-		  string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+" "+$5->getName();
+		  string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName();
 		  $$ = new SymbolInfo(name, type);
 		  string rule = "statement : WHILE LPAREN expression RPAREN statement";
 		  writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -686,17 +713,46 @@ statement : var_declaration	{
 	  }
 	  | PRINTLN LPAREN ID RPAREN SEMICOLON	{
 		  string type = "statement";
-		  string name = $1->getName()+" "+$2->getName()+" "+$3->getName()+" "+$4->getName()+" "+$5->getName();
+		  string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName();
 		  $$ = new SymbolInfo(name, type);
 		  string rule = "statement : PRINTLN LPAREN ID RPAREN SEMICOLON";
+		  SymbolInfo *symbolFound = table->lookUpInAllScope($3->getName());
+		  if(symbolFound!= NULL)
+		  {
+			  if(symbolFound->ai->isFunction == true)
+			  {
+				  errors++;
+				  string msg = "Function cannot be inside printf";
+				  writeError(logout, errorFile, line_count, msg);
+			  }
+		  }else
+			{
+				errors++;
+				string msg = "Variable "+$3->getName()+" undeclared";
+				writeError(logout, errorFile, line_count, msg);
+			}
 		  writeMatchedRuleInLogFile(logout, line_count, rule);
 		  writeMatchedSymbolInLogFile(logout, name);
+
 	  }
 	  | RETURN expression SEMICOLON	{
 		  string type = "statement";
-		  string name = $1->getName()+" "+$2->getName()+" "+$3->getName();
+		  string name = $1->getName()+" "+$2->getName()+""+$3->getName();
 		  $$ = new SymbolInfo(name, type);
 		  string rule = "statement : RETURN expression SEMICOLON";
+		  //cout << "I was here in return expression SEMICOLON rule-----------------\n\n\n";
+		  if(functionReturnType == "void")
+		  {
+			  errors++;
+			  string msg = "Function type void cannot have a return statement";
+			  writeError(logout, errorFile, line_count, msg);
+		  }
+		//   if($2->ai->returnType != functionReturnType)
+		//   {
+		// 	  errors++;
+		// 	  string msg = "Return type mismatch for current function";
+		// 	  writeError(logout, errorFile, line_count, msg);
+		//   }
 		  writeMatchedRuleInLogFile(logout, line_count, rule);
 		  writeMatchedSymbolInLogFile(logout, name);
 	  }
@@ -704,6 +760,7 @@ statement : var_declaration	{
 	  
 expression_statement : SEMICOLON	{
 
+	cout << "I was here in expression_statement : SEMICOLON\n\n\n";
 	string type = "expression_statement";
 	string name = $1->getName();
 	$$ = new SymbolInfo(name, type);
@@ -713,7 +770,7 @@ expression_statement : SEMICOLON	{
 }		
 	| expression SEMICOLON 	{
 		string type = "expression_statement";
-		string name = $1->getName()+" "+$2->getName();
+		string name = $1->getName()+""+$2->getName();
 		$$ = new SymbolInfo(name, type);
 		string rule = "expression_statement : expression SEMICOLON";
 		writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -723,16 +780,13 @@ expression_statement : SEMICOLON	{
 	  
 variable : ID	{
 	string type = "variable";
-	string name = $1->getName();
+	string name = $1->getName()+"";
 	$$ = new SymbolInfo(name, type);
 	string rule = "variable : ID";
-	cout << "Entered this rule:- " << rule << endl;
-	writeMatchedRuleInLogFile(logout, line_count, rule);
-	writeMatchedSymbolInLogFile(logout, name);
-
+	cout << "Entered this rule:- " << rule << "---------------\n\n" << endl;
 	$$->ai = new AdditionalInfo;
 
-	SymbolInfo *symbolFound = table->lookUp($1->getName());
+	SymbolInfo *symbolFound = table->lookUpInAllScope($1->getName());
 	if(symbolFound == NULL)
 	{
 		errors++;
@@ -741,6 +795,9 @@ variable : ID	{
 		$$->ai->returnType = ERROR;	//to keep the code running
 	}else
 	{
+		
+		if(symbolFound->ai != NULL)
+		{
 		if(symbolFound->ai->isFunction == true)
 		{
 			errors++;
@@ -750,11 +807,17 @@ variable : ID	{
 		}else if(symbolFound->ai->isArray == true)
 		{
 			errors++;
-			string msg = "Variable "+$1->getName()+" is an array";
+			string msg = "Type mismatch,"+$1->getName()+" is an array";
 			writeError(logout, errorFile, line_count, msg);
 		}
+		}
+		cout << "variable : ID rule, symbolFound is not null before--------------\n\n\n";
 		$$->ai->returnType = symbolFound->ai->returnType;
+		cout << "variable : ID rule, symbolFound is not null after " << symbolFound->ai->returnType << "--------------\n\n\n";
 	}
+	writeMatchedRuleInLogFile(logout, line_count, rule);
+	writeMatchedSymbolInLogFile(logout, name);
+
 }		
 	 | ID LTHIRD expression RTHIRD	{
 
@@ -762,12 +825,18 @@ variable : ID	{
 		 string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName();
 		 $$ = new SymbolInfo(name, type);
 		 string rule = "variable : ID LTHIRD expression RTHIRD";
-		 writeMatchedRuleInLogFile(logout, line_count, rule);
-		 writeMatchedSymbolInLogFile(logout, name);
-
 		 $$->ai = new AdditionalInfo;
 
-		 SymbolInfo *symbolFound = table->lookUp($1->getName());
+		 SymbolInfo *symbolFound = table->lookUpInAllScope($1->getName());
+
+		cout << "return type:----------------------------" << $3->ai->returnType << "\n\n\n\n\n\n\n\n\n\n";
+		 if($3->ai->returnType != "int")
+		 {
+			 errors++;
+			 string msg = "Expression inside third brackets not an integer";
+			 writeError(logout, errorFile, line_count, msg);
+		 }
+
 		 if(symbolFound != NULL)
 		 {
 			 if(symbolFound->ai->isFunction == true)
@@ -789,13 +858,11 @@ variable : ID	{
 			 writeError(logout, errorFile, line_count, msg);
 			 $$->ai->returnType = ERROR; //to keep code running 
 		 }
+		 writeMatchedRuleInLogFile(logout, line_count, rule);
+		 writeMatchedSymbolInLogFile(logout, name);
 
-		 if($$->ai->returnType != "int")
-		 {
-			 errors++;
-			 string msg = "index number should be integer for array "+$1->getName();
-			 writeError(logout, errorFile, line_count, msg);
-		 }
+
+		 
 	 }
 	 ;
 	 
@@ -805,16 +872,19 @@ variable : ID	{
 	 string rule = "expression : logic_expression";
 	 writeMatchedRuleInLogFile(logout, line_count, rule);
 	 writeMatchedSymbolInLogFile(logout, $1->getName());
+	 $$->ai = new AdditionalInfo;
+	 $$->ai->returnType = $1->ai->returnType;
+
  }
 	   | variable ASSIGNOP logic_expression 	{
 
+		   	cout << "pera pera......................\n\n\n";
 		    string type = "expression";
 		    string name = $1->getName() + "" + $2->getName()+""+$3->getName();
 		    $$ = new SymbolInfo(name, type);
 		    string rule = "expression : variable ASSIGNOP logic_expression";
-		    writeMatchedRuleInLogFile(logout, line_count, rule);
-	 	    writeMatchedSymbolInLogFile(logout, $1->getName());
 
+			cout << "Got this rule: ------- " << rule << "\n\n\n";
 			$$->ai = new AdditionalInfo;
 		    SymbolInfo *left = $1;	//left refers to variable 
 		    SymbolInfo *right = $3;	//right refers to logic_expression
@@ -846,6 +916,9 @@ variable : ID	{
 					$$->ai->returnType = left->ai->returnType;
 				}	   
 			}
+
+			writeMatchedRuleInLogFile(logout, line_count, rule);
+	 	    writeMatchedSymbolInLogFile(logout, name);
 	   }
 	   ;
 			
@@ -862,12 +935,10 @@ logic_expression : rel_expression	{
 }	
 	| rel_expression LOGICOP rel_expression	{
 
-		string name = $1->getName()+" "+$2->getName()+" "+$3->getName();
+		string name = $1->getName()+""+$2->getName()+""+$3->getName();
 		$$ = new SymbolInfo(name, "logic_expression");
 		string rule = "logic_expression : rel_expression LOGICOP rel_expression";
-		writeMatchedRuleInLogFile(logout, line_count, rule);
-		writeMatchedSymbolInLogFile(logout, name);
-
+		
 		$$->ai = new AdditionalInfo;
 		if($1->ai->returnType != "int" || $3->ai->returnType != "int")
 		{
@@ -879,6 +950,10 @@ logic_expression : rel_expression	{
 		{
 			$$->ai->returnType = "int";
 		}
+
+		writeMatchedRuleInLogFile(logout, line_count, rule);
+		writeMatchedSymbolInLogFile(logout, name);
+
 	} 	
 		 ;
 			
@@ -892,7 +967,7 @@ rel_expression	: simple_expression	{
 	$$->ai->returnType = $1->ai->returnType;
 }
 		| simple_expression RELOP simple_expression	{
-			string name = $1->getName()+" "+$2->getName()+" "+$3->getName();
+			string name = $1->getName()+""+$2->getName()+""+$3->getName();
 			$$ = new SymbolInfo(name, "rel_expression");
 			string rule = "rel_expression : simple_expression RELOP simple_expression";
 			writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -943,12 +1018,14 @@ term :	unary_expression	{
 		string name = $1->getName()+""+$2->getName()+""+$3->getName();
 		$$ = new SymbolInfo(name, "term");
 		string rule = "term : term MULOP unary_expression";
-		writeMatchedRuleInLogFile(logout, line_count, rule);
-		writeMatchedSymbolInLogFile(logout, name);
+		
 		string retType = "int";
 		if($1->ai->returnType == "float" ||  $3->ai->returnType == "float")
 		{
-			if($2->getName()=="%")
+			cout << "1st operand : "+$1->getName()+"---------\n\n\n";
+			cout << "2nd operand : "+$3->getName()+"---------\n\n\n";
+			cout << "operand : "+$2->getName()+ "------------\n\n\n";
+			if($2->getName()=="\%")
 			{
 				errors++;
 				string msg = "Non-integer operand on modulus operator";
@@ -968,6 +1045,8 @@ term :	unary_expression	{
 		{
 			retType = ERROR;
 		}
+		writeMatchedRuleInLogFile(logout, line_count, rule);
+		writeMatchedSymbolInLogFile(logout, name);
 		$$->ai = new AdditionalInfo;
 		$$->ai->returnType = retType;
 	}
@@ -979,7 +1058,7 @@ unary_expression : ADDOP unary_expression	{
 	writeMatchedRuleInLogFile(logout, line_count, "unary_expression : ADDOP unary_expression");
 	writeMatchedSymbolInLogFile(logout, name);
 	$$->ai= new AdditionalInfo;
-	$$->ai->returnType = $1->ai->returnType;
+	$$->ai->returnType = $2->ai->returnType;
 }
 	| NOT unary_expression	{
 		string name = $1->getName()+""+$2->getName();
@@ -987,14 +1066,16 @@ unary_expression : ADDOP unary_expression	{
 		writeMatchedRuleInLogFile(logout, line_count, "unary_expression : NOT unary_expression");
 		writeMatchedSymbolInLogFile(logout, name);
 		$$->ai= new AdditionalInfo;
-		$$->ai->returnType = $1->ai->returnType;
+		$$->ai->returnType = $2->ai->returnType;
 	} 
 	| factor	{
+		//cout << "I was here in unary_expression : factor :3--------------------------------\n\n\n";
 		$$ = new SymbolInfo($1->getName(), "unary_expression");
 		writeMatchedRuleInLogFile(logout, line_count, "unary_expression : factor");
 		writeMatchedSymbolInLogFile(logout, $1->getName());
 		$$->ai= new AdditionalInfo;
 		$$->ai->returnType = $1->ai->returnType;
+		cout << $1->ai->returnType << " in unary_expression : factor\n\n\n\n\n\n\n";
 	} 
 	;
 	
@@ -1014,11 +1095,10 @@ factor	: variable	{
 
 		string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName();
 		$$ = new SymbolInfo(name, "factor");
-		writeMatchedRuleInLogFile(logout, line_count, "factor : ID LPAREN argument_list RPAREN");
-		writeMatchedSymbolInLogFile(logout, name);
+		
 
 		string retType = "undeclared";
-		SymbolInfo *symbolFound = table->lookUp($1->getName());
+		SymbolInfo *symbolFound = table->lookUpInAllScope($1->getName());
 
 		if(symbolFound == NULL)
 		{
@@ -1070,19 +1150,29 @@ factor	: variable	{
 				}
 			}
 		}
-
+		writeMatchedRuleInLogFile(logout, line_count, "factor : ID LPAREN argument_list RPAREN");
+		writeMatchedSymbolInLogFile(logout, name);
 		$$->ai = new AdditionalInfo;
 		$$->ai->returnType = retType;
 		argumentList.clear();
 
 	}
 	| LPAREN expression RPAREN	{
+		cout << "Till this works fine.......................................";
 		string name = $1->getName()+""+$2->getName()+""+$3->getName();
 		$$ = new SymbolInfo(name, "factor");
 		writeMatchedRuleInLogFile(logout, line_count, "factor : LPAREN expression RPAREN");
 		writeMatchedSymbolInLogFile(logout, name);
 		$$->ai= new AdditionalInfo;
-		$$->ai->returnType = $1->ai->returnType;
+		cout << "Till this works fine.......................................";
+		if($2->ai)
+		{
+			$$->ai->returnType = $2->ai->returnType;
+		}else
+		{
+			$$->ai->returnType = "int";
+		}
+		
 	}
 	| CONST_INT	{
 		$$ = new SymbolInfo($1->getName(), "factor");
@@ -1170,8 +1260,8 @@ int main(int argc,char *argv[])
 	yyin = input;
 	yyparse();
 
-	//table->printAllScopeTable(logout);
-	fprintf(logout, "Total lines %d\n\n",line_count);
+	table->printAllScopeTable(logout);
+	fprintf(logout, "\nTotal lines %d\n\n",line_count);
 	fprintf(logout, "Total warnings %d\n\n",warning_count);
 	fprintf(logout, "Total errors %d\n\n",errors);
 

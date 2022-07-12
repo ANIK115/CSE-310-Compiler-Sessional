@@ -209,6 +209,14 @@ MULTILINECOMMENT [/][\*]
 			yylval.symbol = syfo;
 			return CONTINUE;
 		}
+
+"printf"	{
+	string name = yytext;
+	string type = "keyword";
+	SymbolInfo *syfo = new SymbolInfo(name, type);
+	yylval.symbol = syfo;
+	return PRINTLN;
+}
 		
 		
 		
@@ -372,7 +380,7 @@ MULTILINECOMMENT [/][\*]
 		
 			// fprintf(tokenout,"<COMMA,%s> ",yytext);
 			// fprintf(logout,"\nLine no %d: TOKEN <COMMA> Lexeme %s found\n",line_count,yytext);
-			string name = yytext;
+			string name = ",";
 			string type = "COMMA";
 			SymbolInfo *syfo = new SymbolInfo(name, type);
 			yylval.symbol = syfo;
@@ -383,7 +391,7 @@ MULTILINECOMMENT [/][\*]
 		
 			// fprintf(tokenout,"<SEMICOLON,%s> ",yytext);
 			// fprintf(logout,"\nLine no %d: TOKEN <SEMICOLON> Lexeme %s found\n",line_count,yytext);
-			string name = yytext;
+			string name = ";";
 			string type = "SEMICOLON";
 			SymbolInfo *syfo = new SymbolInfo(name, type);
 			yylval.symbol = syfo;
@@ -408,14 +416,7 @@ MULTILINECOMMENT [/][\*]
 		}
 		
 
-{DIGIT}*\.?{DIGIT}+E?[+-]?({DIGIT}|{DIGIT}*)	{
-			// fprintf(tokenout,"<CONST_FLOAT,%s> ",yytext);
-			// fprintf(logout,"\nLine no %d: TOKEN <CONST_FLOAT> Lexeme %s found\n",line_count,yytext);
-			// //insert in symbol table and print symbol table content(only non empty buckets)
-			// bool flag = st.insertInCurrentST(yytext, "CONST_FLOAT");
-			// if(flag) st.printAllScopeTable(logout);
-			// else fprintf(logout, "\n%s already exixsts in current ScopeTable\n", yytext);
-
+({DIGIT}*\.{DIGIT}+)(E[+-]?[0-9]+)?|{DIGIT}+(E[-+]?[0-9]+)	{
 			string name = yytext;
 			string type = "CONST_FLOAT";
 			SymbolInfo *syfo = new SymbolInfo(name, type);
