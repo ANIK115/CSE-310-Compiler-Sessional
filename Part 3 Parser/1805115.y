@@ -69,7 +69,7 @@ void errorCheckingForFunctionDefinition(SymbolInfo *symbolFound, string funcRetu
     if(symbolFound->ai == NULL || (symbolFound->ai != NULL && symbolFound->ai->isFunction == false))
     {
         errors++;
-        writeError(logout, errorFile, line_count, "Variable name function name conflict");
+        writeError(logout, errorFile, line_count, "Multiple declaration of "+symbolFound->getName());
 
     }else if(symbolFound->ai->isFunctionDefined == true)
     {
@@ -78,12 +78,12 @@ void errorCheckingForFunctionDefinition(SymbolInfo *symbolFound, string funcRetu
     }else if(symbolFound->ai->returnType != funcReturnType)
     {
         errors++;
-        string msg = "Return type does not match with previously declared signature for function "+funcName;
+        string msg = "Return type mismatch with function declaration in function "+funcName;
         writeError(logout, errorFile, line_count, msg);
     }else if(symbolFound->ai->typeSpecifiers.size() != functionArguments.size())
     {
         errors++;
-        string msg = "Total number of arguments mismatch in function "+funcName;
+        string msg = "Total number of arguments mismatch with declaration in function "+funcName;
         writeError(logout, errorFile, line_count, msg);
     }else if(symbolFound->ai->typeSpecifiers.size() == functionArguments.size())
     {
@@ -104,7 +104,7 @@ void errorCheckingForFunctionDefinition(SymbolInfo *symbolFound, string funcRetu
 //this method is used to insert the function definiton or declaration in symbol table 
 void insertFunctionDefInTable(string funcName, string returnType, SymbolInfo *symbolFound, bool isDefined)
 {
-	table->insertInCurrentST(funcName, "function");
+	table->insertInCurrentST(funcName, "ID");
 	symbolFound = table->lookUp(funcName);
 	if(symbolFound)
 	{
@@ -128,12 +128,12 @@ void routineWorkForLCURL()
 		SymbolInfo *symbolFound = table->lookUp(functionArguments[i].arg_name);
 		if(symbolFound!= NULL)
 		{
-			errors++;
-			string msg = "Multiple argument with same name "+functionArguments[i].arg_name;
-			writeError(logout, errorFile, line_count, msg);
+			// errors++;
+			// string msg = "Multiple argument with same name "+functionArguments[i].arg_name;
+			// writeError(logout, errorFile, line_count, msg);
 		}else
 		{
-			table->insertInCurrentST(functionArguments[i].arg_name, functionArguments[i].typeSpecifier);
+			table->insertInCurrentST(functionArguments[i].arg_name, "ID");
 			SymbolInfo *symbol = table->lookUp(functionArguments[i].arg_name);
 			symbol->ai = new AdditionalInfo;
 			symbol->ai->returnType = functionArguments[i].typeSpecifier;
@@ -267,7 +267,7 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON	{
 		if(symbolFound->ai == NULL || (symbolFound->ai != NULL && symbolFound->ai->isFunction == false))
     	{
         	errors++;
-        	writeError(logout, errorFile, line_count, "Variable name function name conflict");
+        	writeError(logout, errorFile, line_count, "Multiple declaration of "+$2->getName());
     	}else if(symbolFound->ai->isFunction == true)
 		{
 			errors++;
@@ -277,7 +277,7 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON	{
 	}else 
 	{
 		bool flag = false;
-		table->insertInCurrentST($2->getName(), "function");
+		table->insertInCurrentST($2->getName(), "ID");
 		SymbolInfo *symbolFound = table->lookUp($2->getName());
 		symbolFound->ai = new AdditionalInfo;
 		for(int i=0; i<functionArguments.size(); i++)
@@ -354,7 +354,7 @@ func_definition : type_specifier ID LPAREN parameter_list RPAREN
 			{
 
 				bool flag = false;
-				table->insertInCurrentST($2->getName(), "function");
+				table->insertInCurrentST($2->getName(), "ID");
 				SymbolInfo *symbolFound = table->lookUp($2->getName());
 				//table->enterScope();
 				symbolFound->ai = new AdditionalInfo;
@@ -429,11 +429,23 @@ parameter_list  : parameter_list COMMA type_specifier ID	{
 	string name = $1->getName()+""+$2->getName()+""+$3->getName()+" "+$4->getName();
 	$$ = new SymbolInfo(name, type);
 	string rule = "parameter_list : parameter_list COMMA type_specifier ID";
-	writeMatchedRuleInLogFile(logout, line_count, rule);
-	writeMatchedSymbolInLogFile(logout, name);
+	
+
+	for(int i=0; i<functionArguments.size(); i++)
+	{
+		if(functionArguments[i].arg_name == $4->getName())
+		{
+			errors++;
+			string msg = "Multiple declaration of "+$4->getName()+" in parameter";
+			writeError(logout, errorFile, line_count, msg);
+		}
+	}
 
 	FunctionInfo fi($3->getName(), $4->getName());
 	functionArguments.push_back(fi);
+
+	writeMatchedRuleInLogFile(logout, line_count, rule);
+	writeMatchedSymbolInLogFile(logout, name);
 }
 		| parameter_list COMMA type_specifier	{
 
@@ -458,7 +470,7 @@ parameter_list  : parameter_list COMMA type_specifier ID	{
 			 FunctionInfo fi($1->getName(), $2->getName());
 			 functionArguments.push_back(fi);
 			 //added this line to debug function definition error : undeclared variable
-			//table->insertInCurrentST($2->getName(), $1->getName());
+			//table->insertInCurrentST($2->getName(), "ID");
 		 }
 		| type_specifier	{
 
@@ -511,8 +523,8 @@ var_declaration : type_specifier declaration_list SEMICOLON	{
 	if(varType=="void")
 	{
 		errors++;
-		fprintf(logout, "ERROR at line no %d : cannot declare variable of void type\n\n",line_count, name.c_str());
-		fprintf(errorFile, "ERROR at line no %d : cannot declare variable of void type\n\n",line_count, name.c_str());
+		string msg = "Variable type cannot be void";
+		writeError(logout, errorFile, line_count, msg);
 	}
 
 	
@@ -524,12 +536,12 @@ var_declaration : type_specifier declaration_list SEMICOLON	{
 		if(symbolFound != NULL)
 		{
 			errors++;
-			string msg = "Multiple declaration of variable "+symbolName;
+			string msg = "Multiple declaration of "+symbolName;
 			writeError(logout, errorFile, line_count, msg);
 			continue;
 		}
 
-		table->insertInCurrentST(symbolName, varType);
+		table->insertInCurrentST(symbolName, "ID");
 		SymbolInfo *newSymbol =  table->lookUp(symbolName);
 		newSymbol->ai = new AdditionalInfo;
 		newSymbol->ai->returnType = varType;
@@ -613,11 +625,19 @@ declaration_list : declaration_list COMMA ID	{
 			   string name = $1->getName()+"";
 			   $$ = new SymbolInfo(name, type);
 			   string rule = "declaration_list : ID";
+			   SymbolInfo *symbolFound = table->lookUp($1->getName());
+				if(symbolFound==NULL)
+				{
+					VariableInfo v($1->getName(), 0);
+			    	var_info.push_back(v);
+				}else
+				{
+					errors++;
+					string msg = "Multiple declaration of "+$1->getName();
+					writeError(logout, errorFile, line_count, msg);
+				}
 			   writeMatchedRuleInLogFile(logout, line_count, rule);
 			   writeMatchedSymbolInLogFile(logout, name);
-
-			   VariableInfo v(name, 0);
-			   var_info.push_back(v);
 		   }
  		  | ID LTHIRD CONST_INT RTHIRD	{
 			   string type = "declaration_list";
@@ -728,7 +748,7 @@ statement : var_declaration	{
 		  }else
 			{
 				errors++;
-				string msg = "Variable "+$3->getName()+" undeclared";
+				string msg = "Undeclared variable "+$3->getName();
 				writeError(logout, errorFile, line_count, msg);
 			}
 		  writeMatchedRuleInLogFile(logout, line_count, rule);
@@ -746,13 +766,12 @@ statement : var_declaration	{
 			  errors++;
 			  string msg = "Function type void cannot have a return statement";
 			  writeError(logout, errorFile, line_count, msg);
+		  }else if($2->ai->returnType != functionReturnType)
+		  {
+			  errors++;
+			  string msg = "Return type mismatch for current function";
+			  writeError(logout, errorFile, line_count, msg);
 		  }
-		//   if($2->ai->returnType != functionReturnType)
-		//   {
-		// 	  errors++;
-		// 	  string msg = "Return type mismatch for current function";
-		// 	  writeError(logout, errorFile, line_count, msg);
-		//   }
 		  writeMatchedRuleInLogFile(logout, line_count, rule);
 		  writeMatchedSymbolInLogFile(logout, name);
 	  }
@@ -783,7 +802,7 @@ variable : ID	{
 	string name = $1->getName()+"";
 	$$ = new SymbolInfo(name, type);
 	string rule = "variable : ID";
-	cout << "Entered this rule:- " << rule << "---------------\n\n" << endl;
+	//cout << "Entered this rule:- " << rule << "---------------\n\n" << endl;
 	$$->ai = new AdditionalInfo;
 
 	SymbolInfo *symbolFound = table->lookUpInAllScope($1->getName());
@@ -807,13 +826,13 @@ variable : ID	{
 		}else if(symbolFound->ai->isArray == true)
 		{
 			errors++;
-			string msg = "Type mismatch,"+$1->getName()+" is an array";
+			string msg = "Type mismatch, "+$1->getName()+" is an array";
 			writeError(logout, errorFile, line_count, msg);
 		}
 		}
-		cout << "variable : ID rule, symbolFound is not null before--------------\n\n\n";
+		//cout << "variable : ID rule, symbolFound is not null before--------------\n\n\n";
 		$$->ai->returnType = symbolFound->ai->returnType;
-		cout << "variable : ID rule, symbolFound is not null after " << symbolFound->ai->returnType << "--------------\n\n\n";
+		//cout << "variable : ID rule, symbolFound is not null after " << symbolFound->ai->returnType << "--------------\n\n\n";
 	}
 	writeMatchedRuleInLogFile(logout, line_count, rule);
 	writeMatchedSymbolInLogFile(logout, name);
@@ -847,7 +866,7 @@ variable : ID	{
 			 }else if(symbolFound->ai->isArray == false)
 			 {
 				 errors++;
-				 string msg = "Variable "+$1->getName()+" is not an array";
+				 string msg =$1->getName()+" not an array";
 				 writeError(logout, errorFile, line_count, msg);
 			 }
 			 $$->ai->returnType = symbolFound->ai->returnType;
@@ -902,7 +921,7 @@ variable : ID	{
 				}else if(left->ai->returnType == "int" && right->ai->returnType == "float")
 				{
 					errors++;
-					string msg = "Type mismatch of variable "+$1->getName();
+					string msg = "Type Mismatch";
 					writeError(logout, errorFile, line_count, msg);
 					$$->ai->returnType = left->ai->returnType;
 				}else
@@ -910,7 +929,7 @@ variable : ID	{
 					if(right->ai->returnType == "void")
 					{
 						errors++;
-						string msg = "A void function cannot be called as part of an expression";
+						string msg = "Void function used in expression";
 						writeError(logout, errorFile, line_count, msg);
 					}
 					$$->ai->returnType = left->ai->returnType;
@@ -1018,6 +1037,7 @@ term :	unary_expression	{
 		string name = $1->getName()+""+$2->getName()+""+$3->getName();
 		$$ = new SymbolInfo(name, "term");
 		string rule = "term : term MULOP unary_expression";
+		writeMatchedRuleInLogFile(logout, line_count, rule);
 		
 		string retType = "int";
 		if($1->ai->returnType == "float" ||  $3->ai->returnType == "float")
@@ -1028,7 +1048,7 @@ term :	unary_expression	{
 			if($2->getName()=="\%")
 			{
 				errors++;
-				string msg = "Non-integer operand on modulus operator";
+				string msg = "Non-Integer operand on modulus operator";
 				writeError(logout, errorFile, line_count, msg);
 				retType = ERROR;
 			}else
@@ -1041,11 +1061,17 @@ term :	unary_expression	{
 		}else if($1->ai->returnType == "int" && $3->ai->returnType=="int")
 		{
 			//All okay
-		}else
+		}else if($3->ai->returnType == "void")
+		{
+			errors++;
+			string msg = "Void function used in expression";
+			writeError(logout, errorFile, line_count, msg);
+			retType = ERROR;
+		}
+		else
 		{
 			retType = ERROR;
 		}
-		writeMatchedRuleInLogFile(logout, line_count, rule);
 		writeMatchedSymbolInLogFile(logout, name);
 		$$->ai = new AdditionalInfo;
 		$$->ai->returnType = retType;
@@ -1115,16 +1141,16 @@ factor	: variable	{
 			}else
 			{
 				retType = symbolFound->ai->returnType;
-				if(symbolFound->ai->returnType == "void")
-				{
-					errors++;
-					string msg = "Void function cannot be used as a factor";
-					writeError(logout, errorFile, line_count, msg);
-				}
+				// if(symbolFound->ai->returnType == "void")
+				// {
+				// 	errors++;
+				// 	string msg = "Void function used in expression";
+				// 	writeError(logout, errorFile, line_count, msg);
+				// }
 				if(symbolFound->ai->typeSpecifiers.size()!=argumentList.size())
 				{
 					errors++;
-					string msg = "Number of arguments does not match with function definition for function "+$1->getName();
+					string msg = "Total number of arguments mismatch in function "+$1->getName();
 					writeError(logout, errorFile, line_count, msg);
 				}else
 				{
@@ -1134,15 +1160,14 @@ factor	: variable	{
 						{
 							if((argumentList[i] == "float" && symbolFound->ai->typeSpecifiers[i] == "int") || (argumentList[i] == "int" && symbolFound->ai->typeSpecifiers[i] == "float"))
 							{
-								warning_count++;
-								string num = ""+(i+1);
-								string msg = "Auto type conversion from int to float in function " + $1->getName()+" for parameter no: "+num;
-								writeWarning(logout, errorFile, line_count, msg);
+								errors++;
+								string msg = to_string(i+1)+"th argument mismatch in function " + $1->getName();
+								writeError(logout, errorFile, line_count, msg);
 							}else
 							{
 								errors++;
 								string num = ""+(i+1);
-								string msg = "Type mismatch for function "+$1->getName()+" for parameter no: "+num;
+								string msg = to_string(i+1)+"th argument mismatch in function " + $1->getName();
 								writeError(logout, errorFile, line_count, msg);
 							}
 						}
