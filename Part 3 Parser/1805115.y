@@ -64,7 +64,6 @@ string currentFunctionName;
 //this method is used to check the errors in function definition grammar 
 void errorCheckingForFunctionDefinition(SymbolInfo *symbolFound, string funcReturnType, string funcName)
 {
-	//table->enterScope();
     //ai null means it was a variable and ai not null and isFunction false means it was a variable
     if(symbolFound->ai == NULL || (symbolFound->ai != NULL && symbolFound->ai->isFunction == false))
     {
@@ -74,7 +73,7 @@ void errorCheckingForFunctionDefinition(SymbolInfo *symbolFound, string funcRetu
     }else if(symbolFound->ai->isFunctionDefined == true)
     {
         errors++;
-        writeError(logout, errorFile, line_count, "Multiple definition exists for same function name");
+        writeError(logout, errorFile, line_count, "Multiple declaration of function "+symbolFound->getName());
     }else if(symbolFound->ai->returnType != funcReturnType)
     {
         errors++;
@@ -106,10 +105,10 @@ void insertFunctionDefInTable(string funcName, string returnType, SymbolInfo *sy
 {
 	table->insertInCurrentST(funcName, "ID");
 	symbolFound = table->lookUp(funcName);
-	if(symbolFound)
-	{
-		cout << funcName << " Function is stored-------------------------\n\n\n\n\n\n";
-	}
+	// if(symbolFound)
+	// {
+	// 	cout << funcName << " Function is stored-------------------------\n\n\n\n\n\n";
+	// }
 	symbolFound->ai = new AdditionalInfo;
 	symbolFound->ai->isFunction = true;
 	symbolFound->ai->isFunctionDefined = isDefined;
@@ -303,6 +302,7 @@ func_declaration : type_specifier ID LPAREN parameter_list RPAREN SEMICOLON	{
 			cout << "insertion part complete in function declaration\n\n";
 		}else
 		{
+			//if there is an error, then the function declaration is not stored in symbol table. So previously stored one is being deleted
 			table->removeFromCurrentST($2->getName());
 		}
 
@@ -708,6 +708,7 @@ statement : var_declaration	{
 		  writeMatchedSymbolInLogFile(logout, name);	
 	  }
 	  | IF LPAREN expression RPAREN statement %prec NO_ELSE	{
+		  //Here we're telling Bison to use the precedence for NO_ELSE which was defined at the beginning
 		  string type = "statement";
 		  string name = $1->getName()+""+$2->getName()+""+$3->getName()+""+$4->getName()+""+$5->getName();
 		  $$ = new SymbolInfo(name, type);
@@ -1019,6 +1020,13 @@ simple_expression : term	{
 			string msg = "Auto type conversion from int to float";
 			writeWarning(logout, errorFile, line_count, msg);
 			retType = "float";
+		}
+		if($3->ai->returnType == "void")
+		{
+			errors++;
+			string msg = "Void function used in expression";
+			writeError(logout, errorFile, line_count, msg);
+			retType = ERROR;
 		}
 		$$->ai = new AdditionalInfo;
 		$$->ai->returnType = retType;
