@@ -248,10 +248,20 @@ start : program
 		code += "NUMBER_STRING DB \'00000$\'\n";
 		code += "END MAIN\n";
 		writeAssembly(asmFile, code);
+		if(errors>0)
+		{
+			fclose(asmFile);
+			asmFile = fopen("code.asm", "w");
+		}
 		fclose(asmFile);
-
-		optimizeCode(optimizedAsmFile);
-		cout << "After optimization called!\n\n";
+		if(errors == 0)
+		{
+			optimizeCode(optimizedAsmFile);
+		}else
+		{
+			optimizedAsmFile = fopen("optimized_code.asm","w");
+			fclose(optimizedAsmFile);
+		}
 	}
 	;
 
@@ -483,9 +493,10 @@ func_definition : type_specifier ID LPAREN parameter_list RPAREN  {
 			}else
 			{
 				code += currentFunctionName+" PROC\n";
-				code += "\tPOP BP\n";
+				code += "\tPOP BP ;saving return address to BP\n";
+				code += ";Poping function parameters\n";
 				code += paramCode;
-				code += "\tPUSH BP\n";
+				code += "\tPUSH BP  ;restoring return address to stack \n";
 			}
 			writeAssembly(asmFile, code);
 
@@ -868,11 +879,12 @@ statement : var_declaration	{
 		  
 	  }
 	  | FOR LPAREN {
-		  string code = "; Code segment for For loop rule\n";
+		  string code = "; Code for For loop rule\n";
 		  writeAssembly(asmFile, code);
 	  } expression_statement {
 		  string exp_label = newLabel();
-		  string code = exp_label + ":\n";
+		  string code = ";Initialization in For loop\n";
+		  code += exp_label + ":\n";
 		  writeAssembly(asmFile, code);
 		  $4->labels.clear();
 		  $4->labels.push_back(exp_label);
@@ -883,12 +895,13 @@ statement : var_declaration	{
 		  string label3 = newLabel();
 		  string label4 = newLabel();
 
-		  string code = "";
+		  string code = ";Condition statement in For loop\n";
 		  code += "\tMOV AX, "+conditionVar+ "\n";
 		  code += "\tCMP AX, 1\n";
-		  code += "\tJE "+label3+"\n";
-		  code += "\tJNE "+label4+"\n";
+		  code += "\tJE "+label3+" ; if condition is true\n";
+		  code += "\tJNE "+label4+" ;if condition is false\n";
 		  code += label2 +":\n";
+		  code += "; increment part of for loop\n";
 		  writeAssembly(asmFile, code);
 		  $6->labels.clear();
 		  $6->labels.push_back(label2);
@@ -900,6 +913,7 @@ statement : var_declaration	{
 		   string code = "\tJMP "+exp_label+"\n";
 		   string label3 = $6->labels[1];
 		   code += label3+":\n";
+		   code += ";Body of the for loop\n";
 		   writeAssembly(asmFile, code);
 
 	   }
@@ -972,6 +986,7 @@ statement : var_declaration	{
 		  string code = "\tMOV AX, "+conditionVar+"\n";
 		  code += "\tCMP AX, 0\n";
 		  code += "\tJE "+label2+"\n";
+		  code += ";body of while loop\n";
 		  writeAssembly(asmFile, code);
 		  $4->labels.clear();
 		  $4->labels.push_back(label2);
@@ -1023,6 +1038,7 @@ statement : var_declaration	{
 		  if(flag)
 		  {
 			  string varName = symbolFound->asmVar;
+			  code += ";printing value of "+$3->getName()+"\n";
 			  code += "\tXOR AX, AX\n";
 			  code += "\tMOV AX, "+varName+"\n";
 			  code += "\tCALL DISPLAY\n";
@@ -1100,7 +1116,7 @@ variable : ID	{
 	//cout << "Entered this rule:- " << rule << "---------------\n\n" << endl;
 	$$->ai = new AdditionalInfo;
 
-	cout << "before lookUp in variable : ID rule=======================\n\n";
+	// cout << "before lookUp in variable : ID rule=======================\n\n";
 	SymbolInfo *symbolFound = table->lookUpInAllScope($1->getName());
 	if(symbolFound == NULL)
 	{
@@ -1182,7 +1198,7 @@ variable : ID	{
 
 		//added for offline 4;
 		string varName = $3->asmVar;
-		string code = "\tMOV BX, "+varName+"\n";
+		string code = "\tMOV BX, "+varName+" ;manipulating array\n";
 		code += "\tADD BX, BX\n";
 		string ind = newTemp();		
 		$$->ai->array_index = ind;
@@ -1250,8 +1266,9 @@ variable : ID	{
 			}
 
 			//added for offline 4
-			cout << "Generating assembly code for variable ASSIGNOP logical_expression====================================\n\n\n\n\n\n\n\n\n";
-			string code = "\tMOV AX, "+$3->asmVar+"\n";
+			// cout << "Generating assembly code for variable ASSIGNOP logical_expression====================================\n\n\n\n\n\n\n\n\n";
+			string code = "";
+			code += "\tMOV AX, "+$3->asmVar+" ;"+name+"\n";
 			if($1->ai == NULL)
 			{
 				cout << "no array rule-----------------------------------------------\n\n\n";
@@ -1321,7 +1338,7 @@ logic_expression : rel_expression	{
 		string temp = newTemp();
 
 		string code = "";
-		code += "XOR AX, AX \n";
+		code += "XOR AX, AX ;"+name+"\n";
 		if($2->getName() == "||")
 		{
 			code += "\tMOV AX, "+$1->asmVar+"\n";
@@ -1383,7 +1400,7 @@ rel_expression	: simple_expression	{
 			string op = $2->getName();
 
 			string code = "";
-			code += "\tMOV AX, "+$1->asmVar+"\n";
+			code += "\tMOV AX, "+$1->asmVar+" ;"+name+"\n";
 			code += "\tCMP AX, "+$3->asmVar+"\n";
 
 			if(op == "==")
@@ -1455,7 +1472,7 @@ simple_expression : term	{
 		//added for offline 4
 		string temp = newTemp();
 		string code = "";
-		code += "\tMOV AX, "+$1->asmVar+"\n";
+		code += "\tMOV AX, "+$1->asmVar+" ;"+name+"\n";
 		
 		if($2->getName()== "+")
 		{
@@ -1531,7 +1548,7 @@ term :	unary_expression	{
 		string op = $2->getName();
 
 		//The First operand will be in AX, and the 2nd one will be in BX. Then MUL BX or DIV BX
-		code += "\tMOV AX, "+$1->asmVar+"\n";
+		code += "\tMOV AX, "+$1->asmVar+" ;"+name+"\n";
 		code += "\tMOV BX, "+$3->asmVar+"\n";
 
 		if(op== "*")
@@ -1586,7 +1603,7 @@ unary_expression : ADDOP unary_expression	{
 
 		//added for offline 4
 		string code = "";
-		code += "\tMOV AX, "+$2->asmVar+"\n";
+		code += "\tMOV AX, "+$2->asmVar+" ;"+name+"\n";
 		code += "\tNOT AX\n";
 		code += "\tMOV "+$2->asmVar+", AX\n";
 		$$->asmVar = $2->asmVar;

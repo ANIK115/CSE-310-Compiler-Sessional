@@ -54,7 +54,7 @@ void printFunction(FILE *asmFile)
 
 void optimizeCode(FILE *asmFile)
 {
-    asmFile = fopen("optimize.asm", "w");
+    asmFile = fopen("optimized_code.asm", "w");
 
     vector<string> codes;
 
