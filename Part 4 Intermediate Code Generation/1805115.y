@@ -233,21 +233,25 @@ start : program
 		//writeMatchedSymbolInLogFile(logout,$1->getName());
 
 		//added for offline 4
-		writeAssembly(asmFile, ".DATA");
+		writeAssembly(asmFile, ".DATA\n");
 		for(int i=0; i<varList.size(); i++)
 		{
 			if(varList[i].second == 0)
 			{
-				writeAssembly(asmFile, varList[i].first+" DW ?");
+				writeAssembly(asmFile, varList[i].first+" DW ?\n");
 			}else
 			{
-				writeAssembly(asmFile, varList[i].first+" DW "+to_string(varList[i].second)+" DUP(?)");
+				writeAssembly(asmFile, varList[i].first+" DW "+to_string(varList[i].second)+" DUP(?)\n");
 			}
 		}
 		string code = "NEWLINE DB 0DH, 0AH, \'$\'\n";
 		code += "NUMBER_STRING DB \'00000$\'\n";
 		code += "END MAIN\n";
 		writeAssembly(asmFile, code);
+		fclose(asmFile);
+
+		optimizeCode(optimizedAsmFile);
+		cout << "After optimization called!\n\n";
 	}
 	;
 
@@ -1251,7 +1255,7 @@ variable : ID	{
 			if($1->ai == NULL)
 			{
 				cout << "no array rule-----------------------------------------------\n\n\n";
-				code += "\tMOV "+$1->asmVar+" , AX\n";
+				code += "\tMOV "+$1->asmVar+", AX\n";
 			}else
 			{
 				if($1->ai->isArray == true)
@@ -1259,11 +1263,11 @@ variable : ID	{
 					cout << "Came in array rule-------------------------------------------------------\n\n\n\n\n";
 					code += "\tMOV BX, "+$1->ai->array_index+"\n";
 					code += "\tADD BX, BX\n";
-					code += "\tMOV "+$1->asmVar+"[BX] , AX\n";
+					code += "\tMOV "+$1->asmVar+"[BX], AX\n";
 				}else
 				{
 					cout << "Is array variable is false!!!!!!!!!\n\n\n\n\n\n";
-					code += "\tMOV "+$1->asmVar+" , AX\n";
+					code += "\tMOV "+$1->asmVar+", AX\n";
 				}
 			}
 			
@@ -1326,10 +1330,10 @@ logic_expression : rel_expression	{
 			code += "\tMOV AX, "+$3->asmVar+"\n";
 			code += "\tCMP AX, 1\n";
 			code += "\tJE "+label1+"\n";
-			code += "\tMOV "+temp+" , 0\n";
+			code += "\tMOV "+temp+", 0\n";
 			code += "\JMP "+label2+"\n";
 			code += label1+":\n";
-			code += "\tMOV "+temp+" , 1\n";
+			code += "\tMOV "+temp+", 1\n";
 			code += label2 +":\n";
 		}else if($2->getName()=="&&")
 		{
@@ -1339,10 +1343,10 @@ logic_expression : rel_expression	{
 			code += "\tMOV AX, "+$3->asmVar+"\n";
 			code += "\tCMP AX, 0\n";
 			code += "\tJE "+label1+"\n";
-			code += "\tMOV "+temp +" , 1\n";
+			code += "\tMOV "+temp +", 1\n";
 			code += "\tJMP "+label2+"\n";
 			code += label1+":\n";
-			code += "\MOV "+temp +" , 0\n";
+			code += "\MOV "+temp +", 0\n";
 			code += label2+":\n"; 
 		}
 
@@ -1402,10 +1406,10 @@ rel_expression	: simple_expression	{
 				code += "\tJL "+lab1+"\n";
 			}
 			string temp = newTemp();
-			code += "\tMOV "+temp+" , 0\n";
+			code += "\tMOV "+temp+", 0\n";
 			code += "\tJMP "+lab2+"\n";
 			code += lab1+":\n";
-			code += "\tMOV "+temp+" , 1\n";
+			code += "\tMOV "+temp+", 1\n";
 			code += lab2+":\n";
 			$$->asmVar = temp;
 			writeAssembly(asmFile, code);
@@ -1456,11 +1460,11 @@ simple_expression : term	{
 		if($2->getName()== "+")
 		{
 			code += "\tADD AX, "+$3->asmVar+"\n";
-			code += "\tMOV "+temp+" , AX\n";
+			code += "\tMOV "+temp+", AX\n";
 		}else if($2->getName()=="-")
 		{
 			code += "\tSUB AX, "+$3->asmVar+"\n";
-			code += "\tMOV "+temp+" , AX\n";
+			code += "\tMOV "+temp+", AX\n";
 		}
 
 		$$->asmVar = temp;
@@ -1533,16 +1537,16 @@ term :	unary_expression	{
 		if(op== "*")
 		{
 			code += "\tMUL BX\n";
-			code += "\tMOV "+temp +" , AX\n";
+			code += "\tMOV "+temp +", AX\n";
 		}else if(op == "/")
 		{
 			code += "\tDIV BX\n";
-			code += "\tMOV "+temp +" , AX\n";
+			code += "\tMOV "+temp +", AX\n";
 		}else if(op == "%")
 		{
 			code += "\tXOR DX, DX\n";
 			code += "\tDIV BX\n";
-			code += "\tMOV "+temp+" , DX\n";
+			code += "\tMOV "+temp+", DX\n";
 		}
 
 		$$->asmVar = temp;
@@ -1564,7 +1568,7 @@ unary_expression : ADDOP unary_expression	{
 	{
 		code += "\tMOV AX, "+$2->asmVar+"\n";
 		code += "\tNEG AX\n";
-		code += "\tMOV "+$2->asmVar+" , AX\n";
+		code += "\tMOV "+$2->asmVar+", AX\n";
 	}
 
 	$$->asmVar = $2->asmVar;
@@ -1584,7 +1588,7 @@ unary_expression : ADDOP unary_expression	{
 		string code = "";
 		code += "\tMOV AX, "+$2->asmVar+"\n";
 		code += "\tNOT AX\n";
-		code += "\tMOV "+$2->asmVar+" , AX\n";
+		code += "\tMOV "+$2->asmVar+", AX\n";
 		$$->asmVar = $2->asmVar;
 		writeAssembly(asmFile, code);
 	} 
@@ -1766,7 +1770,7 @@ factor	: variable	{
 		string temp = newTemp();
 		
 		string code = "\tMOV AX, "+$1->asmVar+"\n";
-		code += "\tMOV "+temp+" , AX\n";
+		code += "\tMOV "+temp+", AX\n";
 		code += "\tINC "+$1->asmVar+"\n";
 
 		$$->asmVar = temp;
@@ -1785,7 +1789,7 @@ factor	: variable	{
 		//added code for offline 4
 		string temp = newTemp();
 		string code = "\tMOV AX, "+$1->asmVar+"\n";
-		code += "\tMOV "+temp+" , AX\n";
+		code += "\tMOV "+temp+", AX\n";
 		code += "\tDEC "+$1->asmVar+"\n";
 
 		$$->asmVar = temp;
@@ -1850,6 +1854,7 @@ int main(int argc,char *argv[])
 
 	//added for offline 4
 	asmFile = fopen("code.asm", "w");
+	
 	initializeAssembly(asmFile);
 	printFunction(asmFile);
 
@@ -1871,7 +1876,6 @@ int main(int argc,char *argv[])
 	fclose(input);
 	fclose(logout);
 	fclose(errorFile);
-	fclose(asmFile);
 	
 	return 0;
 }
